@@ -66,7 +66,7 @@ It uses [llama.cpp](https://github.com/ggml-org/llama.cpp) as the inference engi
 
 > ⚡ **Zero manual steps** — `START.bat` handles everything.
 
-### 1 — Get the project
+### 1 Get the project
 
 ```bash
 git clone https://github.com/VortexDQ/VortexDQ-AI.git
@@ -75,7 +75,7 @@ cd VortexDQ-AI
 
 Or download and extract the [ZIP](https://github.com/VortexDQ/VortexDQ-AI/archive/refs/heads/main.zip).
 
-### 2 — Run START.bat
+### 2 Run START.bat
 
 Double-click **`START.bat`**.
 
@@ -266,7 +266,7 @@ Then run **`setup-all.bat`** instead of `START.bat`. It will compile llama-serve
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT see [LICENSE](LICENSE).
 
 ---
 
