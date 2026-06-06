@@ -98,6 +98,23 @@ header{flex-shrink:0;height:42px;display:flex;align-items:center;justify-content
 .bs-btn{padding:4px 11px;border-radius:5px;border:1px solid rgba(0,212,170,.25);background:rgba(0,212,170,.07);color:var(--accent);font-size:11px;cursor:pointer;transition:all .2s}
 .bs-btn:hover{background:rgba(0,212,170,.14);border-color:var(--accent)}
 .retry-bar{display:flex;align-items:center;gap:6px;margin:6px 0;padding:5px 8px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:5px;font-size:11px;color:var(--ylw)}
+/* confirm-run card */
+.confirm-card{margin:5px 0;border-radius:7px;overflow:hidden;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.04);font-size:12px}
+.confirm-head{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(245,158,11,.08);border-bottom:1px solid rgba(245,158,11,.13)}
+.confirm-title{color:var(--ylw);font-weight:700;flex-shrink:0}
+.confirm-cmd{font-family:monospace;color:var(--t2);font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.confirm-pkgs{padding:6px 10px;display:flex;flex-wrap:wrap;gap:4px;min-height:26px;align-items:center}
+.pkg-badge{display:inline-flex;align-items:center;gap:3px;padding:1px 7px;border-radius:10px;font-size:10.5px;font-family:monospace}
+.pkg-ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:#4ade80}
+.pkg-bad{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);color:#f87171}
+.pkg-checking{background:rgba(100,116,139,.1);border:1px solid rgba(100,116,139,.2);color:var(--t2)}
+.confirm-warn{padding:2px 10px 6px;font-size:11px;color:#f87171}
+.confirm-btns{display:flex;gap:8px;padding:7px 10px}
+.cbtn-yes{padding:4px 16px;border-radius:5px;border:1px solid rgba(34,197,94,.35);background:rgba(34,197,94,.1);color:#22c55e;font-size:11px;font-weight:700;cursor:pointer;transition:all .15s}
+.cbtn-yes:hover{background:rgba(34,197,94,.18)}
+.cbtn-yes.warn{border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.09);color:var(--ylw)}
+.cbtn-no{padding:4px 16px;border-radius:5px;border:1px solid rgba(239,68,68,.2);background:rgba(239,68,68,.06);color:#ef4444;font-size:11px;cursor:pointer;transition:all .15s}
+.cbtn-no:hover{background:rgba(239,68,68,.12)}
 .cont-bar{display:flex;align-items:center;gap:6px;margin:4px 0;padding:4px 8px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.12);border-radius:4px;font-size:10.5px;color:var(--a2)}
 /* markdown */
 .bub h1{font-size:1.2em;margin:10px 0 4px}.bub h2{font-size:1.1em;margin:9px 0 3px}.bub h3{font-size:1em;margin:8px 0 2px;font-weight:600}
@@ -489,6 +506,172 @@ function addCard(bub, icon, label, detail) {
   return {st:document.getElementById(id), body:d.querySelector('.tc-b')};
 }
 
+// ── Package registry verification ────────────────────────────────────
+function parseInstallCmd(cmd) {
+  const c = cmd.trim();
+  let registry = null, raw = [];
+
+  // npm install / npm i / npm add
+  if (/^npm\s+(install|i|add)\b/i.test(c)) {
+    registry = 'npm';
+    raw = c.split(/\s+/).slice(2);
+  }
+  // yarn add
+  else if (/^yarn\s+add\b/i.test(c)) {
+    registry = 'npm';
+    raw = c.split(/\s+/).slice(2);
+  }
+  // pnpm add
+  else if (/^pnpm\s+add\b/i.test(c)) {
+    registry = 'npm';
+    raw = c.split(/\s+/).slice(2);
+  }
+  // pip install / pip3 install / python -m pip install
+  else if (/^pip[23]?\s+install\b/i.test(c) || /^python[23]?\s+-m\s+pip\s+install\b/i.test(c)) {
+    registry = 'pypi';
+    const idx = c.lastIndexOf('install') + 7;
+    raw = c.slice(idx).trim().split(/\s+/);
+  }
+  // cargo add
+  else if (/^cargo\s+add\b/i.test(c)) {
+    registry = 'cargo';
+    raw = c.split(/\s+/).slice(2);
+  }
+
+  if (!registry) return { registry: null, packages: [] };
+
+  // Strip flags, version specifiers, and empty strings
+  const packages = raw
+    .filter(p => p && !p.startsWith('-'))
+    .map(p => {
+      // npm: strip @version suffix but keep scoped packages like @org/pkg
+      if (registry === 'npm' && p.startsWith('@')) {
+        const parts = p.slice(1).split('@');
+        return '@' + parts[0];
+      }
+      return p.split('@')[0].split('==')[0].split('>=')[0].split('<=')[0].split('>')[0].split('<')[0].split('[')[0];
+    })
+    .filter(p => p && p.length > 0 && /^[@\w]/.test(p));
+
+  return { registry, packages };
+}
+
+async function verifyPackage(name, registry) {
+  try {
+    if (registry === 'npm') {
+      // npm registry has open CORS
+      const enc = name.startsWith('@') ? name.replace('/', '%2F') : encodeURIComponent(name);
+      const r = await fetch(`https://registry.npmjs.org/${enc}`, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
+      return r.ok;
+    }
+    if (registry === 'pypi') {
+      const r = await fetch(`https://pypi.org/pypi/${encodeURIComponent(name)}/json`, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
+      return r.ok;
+    }
+    if (registry === 'cargo') {
+      const r = await fetch(`https://crates.io/api/v1/crates/${encodeURIComponent(name)}`, {
+        method: 'HEAD',
+        headers: { 'User-Agent': 'VortexDQ-AI/1.0' },
+        signal: AbortSignal.timeout(5000)
+      });
+      return r.ok;
+    }
+    return true;
+  } catch {
+    return true; // network timeout / CORS — don't block the user
+  }
+}
+
+// ── Command confirmation dialog ───────────────────────────────────────
+function confirmRun(cmd, bub) {
+  return new Promise(resolve => {
+    // Build card
+    const card = document.createElement('div');
+    card.className = 'confirm-card';
+
+    const head = document.createElement('div');
+    head.className = 'confirm-head';
+    head.innerHTML = `<span style="font-size:13px">⚡</span><span class="confirm-title">Run command?</span><span class="confirm-cmd">${esc(cmd)}</span>`;
+
+    const pkgsDiv = document.createElement('div');
+    pkgsDiv.className = 'confirm-pkgs';
+    pkgsDiv.style.color = 'var(--t2)';
+    pkgsDiv.textContent = 'Checking…';
+
+    const warnDiv = document.createElement('div');
+    warnDiv.className = 'confirm-warn';
+    warnDiv.style.display = 'none';
+
+    const btns = document.createElement('div');
+    btns.className = 'confirm-btns';
+
+    const yesBtn = document.createElement('button');
+    yesBtn.className = 'cbtn-yes';
+    yesBtn.textContent = '✅ Yes, run it';
+
+    const noBtn = document.createElement('button');
+    noBtn.className = 'cbtn-no';
+    noBtn.textContent = '❌ Skip';
+
+    btns.appendChild(yesBtn);
+    btns.appendChild(noBtn);
+    card.appendChild(head);
+    card.appendChild(pkgsDiv);
+    card.appendChild(warnDiv);
+    card.appendChild(btns);
+    bub.appendChild(card);
+    chatEl.scrollTop = chatEl.scrollHeight;
+
+    function finish(ok) {
+      yesBtn.disabled = noBtn.disabled = true;
+      yesBtn.style.opacity = noBtn.style.opacity = '0.45';
+      head.querySelector('.confirm-title').textContent = ok ? 'Running…' : 'Skipped';
+      resolve(ok);
+    }
+    yesBtn.onclick = () => finish(true);
+    noBtn.onclick  = () => finish(false);
+
+    // Async: verify packages if this is an install command
+    const { registry, packages } = parseInstallCmd(cmd);
+    if (registry && packages.length > 0) {
+      // Show badges as "checking"
+      pkgsDiv.innerHTML = packages.map(p =>
+        `<span class="pkg-badge pkg-checking" id="pb-${btoa(p).replace(/=/g,'')}">⏳ ${esc(p)}</span>`
+      ).join('');
+
+      Promise.all(packages.map(async pkg => {
+        const ok = await verifyPackage(pkg, registry);
+        return { pkg, ok };
+      })).then(results => {
+        pkgsDiv.innerHTML = '';
+        let hasBad = false;
+        for (const { pkg, ok } of results) {
+          const badge = document.createElement('span');
+          badge.className = `pkg-badge ${ok ? 'pkg-ok' : 'pkg-bad'}`;
+          badge.textContent = (ok ? '✅ ' : '❌ ') + pkg;
+          pkgsDiv.appendChild(badge);
+          if (!ok) hasBad = true;
+        }
+        if (hasBad) {
+          const badList = results.filter(r => !r.ok).map(r => r.pkg).join(', ');
+          warnDiv.style.display = 'block';
+          warnDiv.textContent = `⚠ Package${results.filter(r=>!r.ok).length>1?'s':''} not found on ${registry}: ${badList}. These may be hallucinated names — clicking "Run anyway" could install the wrong thing.`;
+          yesBtn.textContent = '⚠ Run anyway';
+          yesBtn.classList.add('warn');
+        } else {
+          pkgsDiv.insertAdjacentHTML('afterbegin',
+            `<span style="color:var(--t2);font-size:10.5px;margin-right:6px">All ${registry} packages verified:</span>`);
+        }
+        chatEl.scrollTop = chatEl.scrollHeight;
+      });
+    } else {
+      // Not an install command — just show the command text, no package check
+      pkgsDiv.textContent = '';
+      pkgsDiv.style.display = 'none';
+    }
+  });
+}
+
 // ── Execute items ─────────────────────────────────────────────────────
 async function executeItems(items, bub, ws) {
   const failures=[], saved=[];
@@ -514,8 +697,17 @@ async function executeItems(items, bub, ws) {
     } catch(e) { st.className='tc-s fail'; st.textContent='error'; body.textContent=e.message; failures.push(`Write ${item.path}: ${e.message}`); }
   }));
 
-  // Run commands in order
+  // Run commands in order — ask user to confirm each one first
   for (const item of runs) {
+    const approved = await confirmRun(item.cmd, bub);
+    if (!approved) {
+      // User skipped — add a small note but don't count as failure
+      const skip = document.createElement('div');
+      skip.style.cssText = 'font-size:10.5px;color:var(--t2);margin:2px 0 4px 2px';
+      skip.textContent = `⏭ Skipped: ${item.cmd}`;
+      bub.appendChild(skip);
+      continue;
+    }
     const {st,body}=addCard(bub,'⚡',item.cmd,item.cmd);
     try {
       const r=await post('/run',{command:item.cmd,workspace:ws});
