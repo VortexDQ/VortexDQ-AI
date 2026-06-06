@@ -47,12 +47,7 @@ if defined SERVER_EXE (
 )
 
 echo         Fetching latest release tag...
-curl -s --max-time 15 "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" -o "%TEMP%\llama_rel.json" 2>nul
-if not exist "%TEMP%\llama_rel.json" goto :DL_FAIL
-
-for /f "tokens=2 delims=:, " %%t in ('findstr /C:"tag_name" "%TEMP%\llama_rel.json"') do set RAW_TAG=%%t
-set LLAMA_TAG=%RAW_TAG:"=%
-del "%TEMP%\llama_rel.json" >nul 2>nul
+for /f "delims=" %%t in ('powershell -NoProfile -ExecutionPolicy Bypass -Command "(Invoke-RestMethod \"https://api.github.com/repos/ggml-org/llama.cpp/releases/latest\").tag_name" 2^>nul') do set LLAMA_TAG=%%t
 if not defined LLAMA_TAG goto :DL_FAIL
 
 echo         Downloading llama-%LLAMA_TAG%-bin-win-cpu-x64.zip...

@@ -1,38 +1,37 @@
-# VortexDQ AI — Launcher
+# VortexDQ AI - Launcher
 # vortexdq.com
 
 $ErrorActionPreference = "Stop"
+
 try {
 
 Set-Location $PSScriptRoot
 $Host.UI.RawUI.WindowTitle = "VortexDQ AI"
 
-# ── Unblock everything in this folder so Windows stops blocking them ──
+# Unblock all files in this folder
 Get-ChildItem -Path $PSScriptRoot -File | Unblock-File -ErrorAction SilentlyContinue
 
 Write-Host ""
-Write-Host "  VortexDQ AI  —  vortexdq.com" -ForegroundColor Cyan
+Write-Host "  VortexDQ AI  -  vortexdq.com" -ForegroundColor Cyan
 Write-Host "  ============================================================" -ForegroundColor DarkGray
 Write-Host ""
 
 # ── STEP 1: Node.js ───────────────────────────────────────────────────
 Write-Host "  [1/4] Node.js..." -NoNewline
-try {
-    $v = & node --version 2>$null
+$nodeOk = $false
+try { $v = node --version 2>$null; $nodeOk = $true } catch {}
+
+if ($nodeOk) {
     Write-Host "  OK  $v" -ForegroundColor Green
-} catch {
-    Write-Host "  Not found. Installing..." -ForegroundColor Yellow
+} else {
+    Write-Host "  Not found. Installing via winget..." -ForegroundColor Yellow
     winget install OpenJS.NodeJS.LTS -e --silent --accept-package-agreements --accept-source-agreements | Out-Null
     $env:PATH = "C:\Program Files\nodejs;$env:PATH"
-    try {
-        $v = & node --version 2>$null
-        Write-Host "  OK  $v" -ForegroundColor Green
-    } catch {
-        Write-Host ""
-        Write-Host "  [ERROR] Node.js install failed. Download from: https://nodejs.org" -ForegroundColor Red
-        Read-Host "Press Enter to exit"
-        exit 1
+    try { $v = node --version 2>$null; $nodeOk = $true } catch {}
+    if (-not $nodeOk) {
+        throw "Node.js install failed. Download from https://nodejs.org then re-run."
     }
+    Write-Host "  OK  $v" -ForegroundColor Green
 }
 
 # ── STEP 2: llama-server ──────────────────────────────────────────────
@@ -48,49 +47,26 @@ if ($serverExe) {
 } else {
     Write-Host "  Not found. Downloading..." -ForegroundColor Yellow
 
-    # Get latest release tag
-    try {
-        $release = Invoke-RestMethod "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest" -TimeoutSec 20
-        $tag = $release.tag_name
-    } catch {
-        Write-Host ""
-        Write-Host "  [ERROR] Could not reach GitHub: $_" -ForegroundColor Red
-        Write-Host "  Download manually: https://github.com/ggml-org/llama.cpp/releases/latest" -ForegroundColor Yellow
-        Write-Host "  Get: llama-XXXXX-bin-win-cpu-x64.zip  ->  extract llama-server.exe here"
-        Read-Host "Press Enter to exit"
-        exit 1
-    }
-
+    $tag = (Invoke-RestMethod "https://api.github.com/repos/ggml-org/llama.cpp/releases/latest").tag_name
     $zipName = "llama-$tag-bin-win-cpu-x64.zip"
     $url = "https://github.com/ggml-org/llama.cpp/releases/download/$tag/$zipName"
-    Write-Host "  Downloading $zipName..." -ForegroundColor DarkGray
 
-    try {
-        Invoke-WebRequest $url -OutFile "llama-win.zip" -UseBasicParsing
-    } catch {
-        Write-Host ""
-        Write-Host "  [ERROR] Download failed: $_" -ForegroundColor Red
-        Write-Host "  Download manually from: $url" -ForegroundColor Yellow
-        Read-Host "Press Enter to exit"
-        exit 1
-    }
+    Write-Host "  Downloading $zipName..." -ForegroundColor DarkGray
+    Invoke-WebRequest $url -OutFile "llama-win.zip" -UseBasicParsing
 
     Write-Host "  Extracting..." -ForegroundColor DarkGray
     Expand-Archive -Path "llama-win.zip" -DestinationPath "llama-bin" -Force
     Remove-Item "llama-win.zip" -Force
 
-    # Copy exe + DLLs out of extracted subfolder
-    Get-ChildItem -Path "llama-bin" -Recurse -Filter "llama-server.exe" | Select-Object -First 1 | ForEach-Object {
-        Copy-Item $_.FullName "llama-server.exe" -Force
-        Get-ChildItem $_.DirectoryName -Filter "*.dll" | ForEach-Object { Copy-Item $_.FullName "." -Force -ErrorAction SilentlyContinue }
+    $found = Get-ChildItem -Path "llama-bin" -Recurse -Filter "llama-server.exe" | Select-Object -First 1
+    if (-not $found) { throw "llama-server.exe not found in downloaded zip." }
+
+    Copy-Item $found.FullName "llama-server.exe" -Force
+    Get-ChildItem $found.DirectoryName -Filter "*.dll" | ForEach-Object {
+        Copy-Item $_.FullName "." -Force -ErrorAction SilentlyContinue
     }
     Remove-Item "llama-bin" -Recurse -Force -ErrorAction SilentlyContinue
 
-    if (-not (Test-Path "llama-server.exe")) {
-        Write-Host "  [ERROR] llama-server.exe not found after extraction." -ForegroundColor Red
-        Read-Host "Press Enter to exit"
-        exit 1
-    }
     $serverExe = "llama-server.exe"
     Write-Host "  OK  llama-server.exe" -ForegroundColor Green
 }
@@ -105,17 +81,12 @@ if (Test-Path $modelFile) {
     Write-Host "  OK  Qwen2.5-Coder-7B-Abliterated" -ForegroundColor Green
 } else {
     Write-Host "  Not found. Downloading ~4.8 GB..." -ForegroundColor Yellow
-    Write-Host "  (This takes 10-30 minutes on first run)" -ForegroundColor DarkGray
+    Write-Host "  (Takes 10-30 min on first run)" -ForegroundColor DarkGray
     $modelUrl = "https://huggingface.co/mradermacher/Qwen2.5-Coder-7B-Abliterated-GGUF/resolve/main/Qwen2.5-Coder-7B-Abliterated.Q4_K_M.gguf"
-    try {
-        # Use curl.exe for large files — it shows progress and resumes better
-        & curl.exe -L --progress-bar -o $modelFile $modelUrl
-        if ($LASTEXITCODE -ne 0) { throw "curl exited with $LASTEXITCODE" }
-    } catch {
-        Write-Host "  [ERROR] Model download failed: $_" -ForegroundColor Red
+    & curl.exe -L --progress-bar -o $modelFile $modelUrl
+    if ($LASTEXITCODE -ne 0) {
         if (Test-Path $modelFile) { Remove-Item $modelFile -Force }
-        Read-Host "Press Enter to exit"
-        exit 1
+        throw "Model download failed. Check your internet connection and try again."
     }
     Write-Host "  Download complete!" -ForegroundColor Green
 }
@@ -123,30 +94,25 @@ if (Test-Path $modelFile) {
 # ── STEP 4: Launch ────────────────────────────────────────────────────
 Write-Host "  [4/4] Starting servers..." -ForegroundColor White
 
-# Thread count: half logical cores, min 4 max 8
 $cores = (Get-CimInstance Win32_Processor).NumberOfLogicalProcessors
 $threads = [Math]::Max(4, [Math]::Min(8, [int]($cores / 2)))
 
-# Kill stale instances
 Stop-Process -Name "llama-server" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "node" -Force -ErrorAction SilentlyContinue
 Start-Sleep -Seconds 1
 
-# Start llama-server
 $llamaArgs = "-m `"$modelFile`" --port 8080 --host 127.0.0.1 -c 16384 -t $threads -tb $threads -b 512 --path `"$PSScriptRoot`" --log-disable"
 Start-Process -FilePath $serverExe -ArgumentList $llamaArgs -WindowStyle Hidden
 
-# Start agent server
 Start-Process -FilePath "node" -ArgumentList "agent-server.js" -WindowStyle Hidden -WorkingDirectory $PSScriptRoot
 
 Write-Host ""
 Write-Host "  ============================================================" -ForegroundColor DarkGray
-Write-Host "  Loading model on $threads threads — usually 1-3 minutes..." -ForegroundColor Cyan
-Write-Host "  Browser will open automatically when ready." -ForegroundColor Cyan
+Write-Host "  Loading model on $threads threads (1-3 minutes)..." -ForegroundColor Cyan
+Write-Host "  Browser opens automatically when ready." -ForegroundColor Cyan
 Write-Host "  ============================================================" -ForegroundColor DarkGray
 Write-Host ""
 
-# Poll until model is ready
 $checks = 0
 while ($true) {
     Start-Sleep -Seconds 2
@@ -178,5 +144,5 @@ Write-Host "  Stopped. Goodbye!" -ForegroundColor DarkGray
     Write-Host "  ERROR: $_" -ForegroundColor Red
     Write-Host "  ============================================================" -ForegroundColor Red
     Write-Host ""
-    Read-Host "  Press Enter to close"
+    Read-Host "Press Enter to close"
 }
