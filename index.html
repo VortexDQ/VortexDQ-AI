@@ -98,26 +98,6 @@ header{flex-shrink:0;height:42px;display:flex;align-items:center;justify-content
 .bs-btn{padding:4px 11px;border-radius:5px;border:1px solid rgba(0,212,170,.25);background:rgba(0,212,170,.07);color:var(--accent);font-size:11px;cursor:pointer;transition:all .2s}
 .bs-btn:hover{background:rgba(0,212,170,.14);border-color:var(--accent)}
 .retry-bar{display:flex;align-items:center;gap:6px;margin:6px 0;padding:5px 8px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:5px;font-size:11px;color:var(--ylw)}
-/* responsibility warning card */
-.warn-gate{margin:8px 0;border-radius:9px;overflow:hidden;border:1px solid rgba(239,68,68,.35);background:rgba(239,68,68,.04)}
-.warn-gate.amber{border-color:rgba(245,158,11,.4);background:rgba(245,158,11,.04)}
-.warn-banner{padding:10px 14px;display:flex;align-items:flex-start;gap:10px;border-bottom:1px solid rgba(239,68,68,.18)}
-.warn-gate.amber .warn-banner{border-bottom-color:rgba(245,158,11,.2)}
-.warn-icon{font-size:22px;flex-shrink:0;line-height:1}
-.warn-meta{flex:1;min-width:0}
-.warn-label{font-size:13px;font-weight:800;color:#f87171;letter-spacing:.02em;margin-bottom:3px}
-.warn-gate.amber .warn-label{color:#fbbf24}
-.warn-desc{font-size:12px;color:var(--t3);line-height:1.6}
-.warn-note{padding:8px 14px;font-size:11.5px;color:var(--t2);line-height:1.6;border-bottom:1px solid rgba(239,68,68,.1)}
-.warn-gate.amber .warn-note{border-bottom-color:rgba(245,158,11,.1)}
-.warn-resp{padding:7px 14px;font-size:11px;font-style:italic;color:var(--t2);border-bottom:1px solid rgba(239,68,68,.1)}
-.warn-gate.amber .warn-resp{border-bottom-color:rgba(245,158,11,.1)}
-.warn-btns{display:flex;gap:10px;padding:10px 14px}
-.wbtn-accept{padding:6px 18px;border-radius:6px;border:1px solid rgba(239,68,68,.4);background:rgba(239,68,68,.1);color:#f87171;font-size:12px;font-weight:700;cursor:pointer;transition:all .15s}
-.wbtn-accept:hover{background:rgba(239,68,68,.18)}
-.warn-gate.amber .wbtn-accept{border-color:rgba(245,158,11,.45);background:rgba(245,158,11,.1);color:#fbbf24}
-.wbtn-deny{padding:6px 18px;border-radius:6px;border:1px solid rgba(100,116,139,.25);background:rgba(100,116,139,.07);color:var(--t3);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
-.wbtn-deny:hover{background:rgba(100,116,139,.14);color:var(--text)}
 /* confirm-run card */
 .confirm-card{margin:5px 0;border-radius:7px;overflow:hidden;border:1px solid rgba(245,158,11,.3);background:rgba(245,158,11,.04);font-size:12px}
 .confirm-head{display:flex;align-items:center;gap:6px;padding:6px 10px;background:rgba(245,158,11,.08);border-bottom:1px solid rgba(245,158,11,.13)}
@@ -524,156 +504,6 @@ function addCard(bub, icon, label, detail) {
   d.innerHTML=`<div class="tc-h"><span style="font-size:11px">${icon}</span><span class="tc-n">${esc(label)}</span><span class="tc-s run" id="${id}">…</span></div><div class="tc-b">${esc((detail||'').slice(0,120))}</div>`;
   bub.appendChild(d); chatEl.scrollTop=chatEl.scrollHeight;
   return {st:document.getElementById(id), body:d.querySelector('.tc-b')};
-}
-
-// ── Sensitive-topic gate ──────────────────────────────────────────────
-const SENSITIVE_CATEGORIES = [
-  {
-    id: 'osint', amber: true,
-    icon: '🔍', label: 'OSINT / Surveillance Tool',
-    description: 'This looks like a tool to gather, aggregate, or expose personal information about real people — such as location tracking, social profiling, phone/address lookups, or identity doxing.',
-    note: 'OSINT tools built for research, journalism, or self-lookup are legitimate. Tools built to stalk, harass, or expose private individuals without consent are not.',
-    patterns: [
-      /\bosint\b/i,
-      /track\s+(someone|a\s+person|people|user).{0,30}(location|phone|address|online)/i,
-      /\b(dox|doxx|doxing|doxxing)\b/i,
-      /\b(people.?finder|phone.?lookup|address.?lookup|person.?lookup|reverse.?lookup)\b/i,
-      /find\s+(someone.{0,25}(phone|address|email|location|real.?name))/i,
-      /spy\s+on\s+(someone|a\s+person|my|their)/i,
-      /without\s+(them|their)\s+(knowing|consent|permission|awareness)/i,
-    ]
-  },
-  {
-    id: 'malware', amber: false,
-    icon: '☠️', label: 'Malware / Virus / Ransomware',
-    description: 'This appears to be a request to build software specifically designed to damage, infect, encrypt, or destroy computer systems or data without authorization.',
-    note: 'Security research in controlled lab environments is legitimate. Deploying malware against real systems is illegal in virtually every jurisdiction.',
-    patterns: [
-      /\b(malware|ransomware|worm|virus|trojan)\b/i,
-      /\b(keylogger|key.?logger|keystroke.?logger)\b/i,
-      /\b(rootkit|bootkit|fileless.?malware)\b/i,
-      /\b(cryptolocker|encrypt.{0,20}files.{0,20}ransom|ransom.{0,20}encrypt)\b/i,
-    ]
-  },
-  {
-    id: 'rat', amber: false,
-    icon: '🐀', label: 'Remote Access Trojan (RAT)',
-    description: 'This appears to involve building a hidden remote access tool or covert channel to control a machine without the owner\'s knowledge.',
-    note: 'Remote administration tools used with the owner\'s explicit consent (IT support, helpdesk) are legitimate. Covert RATs are not.',
-    patterns: [
-      /\b(rat|remote.?access.?tool|remote.?admin.?trojan)\b/i,
-      /\b(backdoor|back.?door)\b/i,
-      /\b(reverse.?shell|bind.?shell)\b/i,
-      /\b(c2.?server|c&c|command.?and.?control)\b/i,
-      /\bpersist(ence|ent).{0,30}(hidden|undetected|stealth|startup)\b/i,
-      /hide.{0,20}(process|executable|service).{0,20}(from|antivirus|av|task.?manager)/i,
-    ]
-  },
-  {
-    id: 'phishing', amber: false,
-    icon: '🎣', label: 'Phishing / Credential Harvesting',
-    description: 'This appears to involve creating a fake website, login page, or tool designed to trick people into entering passwords or personal details.',
-    note: 'Phishing simulations run by your own organization\'s security team with written authorization are legitimate. Targeting others is not.',
-    patterns: [
-      /\bphish(ing)?\b/i,
-      /\b(fake|clone|spoof(ed)?)\s+(login|sign.?in|bank|paypal|gmail|facebook)\s*(page|site|website)?\b/i,
-      /credential.{0,25}(harvest|steal|grab|capture|dump)/i,
-      /\b(password|credential).?stealer?\b/i,
-      /\b(evilginx|gophish|modlishka|zphisher|blackeye)\b/i,
-    ]
-  },
-  {
-    id: 'ddos', amber: false,
-    icon: '💥', label: 'DDoS / Network Attack',
-    description: 'This appears to involve building a tool to flood, disrupt, or take down servers, websites, or network infrastructure.',
-    note: 'Load-testing your own infrastructure with your own tools is legitimate. Attacking third-party systems is illegal worldwide.',
-    patterns: [
-      /\b(ddos|d\.d\.o\.s)\b/i,
-      /\b(dos.?attack|denial.?of.?service)\b/i,
-      /\b(botnet|bot.?net)\b/i,
-      /\b(syn.?flood|udp.?flood|http.?flood|slowloris|loic|hoic)\b/i,
-      /flood\s+(a\s+)?(server|website|target|ip address|network)\b/i,
-    ]
-  },
-  {
-    id: 'bruteforce', amber: true,
-    icon: '🔓', label: 'Brute Force / Account Cracking',
-    description: "This appears to involve systematically guessing passwords, cracking accounts, or bypassing authentication on systems or accounts you don't own.",
-    note: 'Brute-forcing your own accounts or systems in a pentesting context with written authorization is legitimate. Targeting others\' accounts is not.',
-    patterns: [
-      /\bbrute.?force.{0,30}(login|password|account|ssh|ftp|rdp|smtp|hash)\b/i,
-      /\bcredential.?stuffing\b/i,
-      /\bpassword.?crack(er|ing|ed)?\b/i,
-      /\b(wordlist|dictionary).?attack\b/i,
-      /(break|hack|get.?into).{0,20}(someone|their|other).{0,20}(account|password|email)\b/i,
-    ]
-  },
-  {
-    id: 'stalkerware', amber: true,
-    icon: '👁️', label: 'Stalkerware / Covert Device Monitoring',
-    description: "This appears to involve secretly monitoring someone's device, messages, location, or activity — running hidden in the background without their knowledge.",
-    note: 'Parental monitoring with the child\'s awareness, or MDM on company-owned devices with employee disclosure, can be legitimate. Covert surveillance of adults is not.',
-    patterns: [
-      /\b(stalkerware|spouseware)\b/i,
-      /(monitor|track|spy).{0,40}(without|secretly|hidden|background).{0,30}(knowing|consent|permission)/i,
-      /hide\s+(the\s+)?(app|icon|process).{0,30}(phone|device|android|iphone)/i,
-      /read.{0,20}(partner|girlfriend|boyfriend|spouse|wife|husband).{0,20}(message|text|sms|whatsapp)/i,
-      /track\s+(my\s+)?(partner|girlfriend|boyfriend|spouse|wife|husband).{0,20}(location|phone|gps)/i,
-    ]
-  },
-];
-
-function detectSensitive(prompt) {
-  for (const cat of SENSITIVE_CATEGORIES) {
-    for (const pat of cat.patterns) {
-      if (pat.test(prompt)) return cat;
-    }
-  }
-  return null;
-}
-
-function showResponsibilityWarning(cat) {
-  return new Promise(resolve => {
-    const bub = addBubble('bot','',false);
-    bub.innerHTML = '';
-
-    const card = document.createElement('div');
-    card.className = 'warn-gate' + (cat.amber ? ' amber' : '');
-
-    card.innerHTML = `
-      <div class="warn-banner">
-        <span class="warn-icon">${cat.icon}</span>
-        <div class="warn-meta">
-          <div class="warn-label">⚠ ${esc(cat.label)}</div>
-          <div class="warn-desc">${esc(cat.description)}</div>
-        </div>
-      </div>
-      <div class="warn-note">${esc(cat.note)}</div>
-      <div class="warn-resp">By clicking <strong>Accept &amp; Build</strong> you confirm this is for legitimate, lawful purposes and take full personal responsibility for what is created. VortexDQ AI and vortexdq.com bear no liability.</div>
-      <div class="warn-btns">
-        <button class="wbtn-accept" id="wbtn-accept-${cat.id}">${cat.amber?'⚠':'☠️'} Accept &amp; Build — I take responsibility</button>
-        <button class="wbtn-deny" id="wbtn-deny-${cat.id}">🚫 Cancel — Stop the build</button>
-      </div>`;
-
-    bub.appendChild(card);
-    chatEl.scrollTop = chatEl.scrollHeight;
-
-    function finish(ok) {
-      document.getElementById(`wbtn-accept-${cat.id}`).disabled = true;
-      document.getElementById(`wbtn-deny-${cat.id}`).disabled = true;
-      document.getElementById(`wbtn-accept-${cat.id}`).style.opacity = '0.5';
-      document.getElementById(`wbtn-deny-${cat.id}`).style.opacity = '0.5';
-      const status = document.createElement('div');
-      status.style.cssText = `padding:6px 14px 8px;font-size:11px;font-weight:600;color:${ok?(cat.amber?'#fbbf24':'#f87171'):'var(--t2)'}`;
-      status.textContent = ok ? '✅ Accepted — proceeding with build. You take full responsibility.' : '🚫 Build cancelled.';
-      card.appendChild(status);
-      chatEl.scrollTop = chatEl.scrollHeight;
-      resolve(ok);
-    }
-
-    document.getElementById(`wbtn-accept-${cat.id}`).onclick = () => finish(true);
-    document.getElementById(`wbtn-deny-${cat.id}`).onclick  = () => finish(false);
-  });
 }
 
 // ── Package registry verification ────────────────────────────────────
@@ -1399,18 +1229,6 @@ async function send() {
       const hasBuiltApp = currentPlan && currentPlan._builtFiles;
       const isModify = hasBuiltApp && /\b(add|fix|change|update|modify|improve|refactor|make|include|also|remove|replace|rename)\b/i.test(text);
       const isNewBuild = !hasBuiltApp || /\b(build|create|new|make me|generate|start)\b/i.test(text);
-
-      // ── Responsibility gate (runs for BOTH new builds and modifications) ──
-      const sensitiveMatch = detectSensitive(text);
-      if (sensitiveMatch) {
-        setStatus('online');
-        const accepted = await showResponsibilityWarning(sensitiveMatch);
-        if (!accepted) {
-          busy=false; sendEl.disabled=false; inpEl.focus();
-          return;
-        }
-        setStatus('busy', 'Planning…');
-      }
 
       if (isModify && !isNewBuild) {
         // Continue working on existing app
