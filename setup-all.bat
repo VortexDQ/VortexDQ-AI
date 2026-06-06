@@ -62,17 +62,30 @@ if not exist "models\Qwen2.5-Coder-7B-Abliterated.Q4_K_M.gguf" (
     )
 )
 
-echo [Starting server...]
+REM Use half the logical CPU cores, capped at 8, minimum 4
+for /f "tokens=2 delims==" %%i in ('wmic cpu get NumberOfLogicalProcessors /value 2^>nul') do set CORES=%%i
+if not defined CORES set CORES=8
+if %CORES% LSS 1 set CORES=8
+set /a THREADS=%CORES%/2
+if %THREADS% LSS 4 set THREADS=4
+if %THREADS% GTR 8 set THREADS=8
+
+echo [Starting AI server on %THREADS% threads...]
 start /B "" "build\bin\llama-server.exe" ^
     -m "models\Qwen2.5-Coder-7B-Abliterated.Q4_K_M.gguf" ^
-    --port 8080 --host 127.0.0.1 -c 16384 ^
+    --port 8080 --host 127.0.0.1 ^
+    -c 16384 -t %THREADS% -tb %THREADS% -b 512 ^
     --path "." --log-disable >nul 2>nul
 
-echo [Waiting for model to load...]
+echo [Starting agent server...]
+start /B "" node agent-server.js >nul 2>nul
+
+echo [Waiting for model to finish loading - this takes 1-3 minutes...]
 :WAIT
-timeout /t 2 /nobreak >nul
-curl.exe -s http://127.0.0.1:8080/v1/models >nul 2>nul
+timeout /t 3 /nobreak >nul
+curl.exe -s http://127.0.0.1:8080/v1/models 2>nul | findstr /C:"\"id\"" >nul 2>nul
 if %ERRORLEVEL% NEQ 0 goto :WAIT
+echo [Model loaded! Opening browser...]
 start http://127.0.0.1:8080
 
 echo.
@@ -83,4 +96,5 @@ echo  Close this window to stop the server.
 echo.
 pause >nul
 taskkill /f /im llama-server.exe >nul 2>nul
+taskkill /f /im node.exe >nul 2>nul
 

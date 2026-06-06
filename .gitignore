@@ -1,0 +1,67 @@
+# ── AI model (large binary, download via START.bat) ──────────────────
+models/
+*.gguf
+*.ggml
+*.bin
+
+# ── llama.cpp pre-built binaries ─────────────────────────────────────
+llama-server.exe
+llama-cli.exe
+llama-quantize.exe
+llama-simple.exe
+llama-win.zip
+llama-bin/
+llama-tmp/
+
+# ── Build artifacts ───────────────────────────────────────────────────
+build/
+bin/
+*.o
+*.obj
+*.a
+*.lib
+*.dll
+*.so
+*.dylib
+*.exp
+*.pdb
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+
+# ── Node.js ───────────────────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+yarn-error.log*
+package-lock.json
+
+# ── Python ────────────────────────────────────────────────────────────
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# ── IDE / editor ──────────────────────────────────────────────────────
+.vs/
+.vscode/
+.idea/
+*.suo
+*.user
+*.aps
+
+# ── Claude Code internal files ────────────────────────────────────────
+.claude/
+
+# ── OS junk ───────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── Temp files ────────────────────────────────────────────────────────
+*.tmp
+*.log
+*.bak

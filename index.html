@@ -1,102 +1,1118 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>VortexDQ AI</title>
 <style>
+:root{
+  --bg:#0d0d0d;--bg2:#111;--bg3:#171717;--bg4:#1e1e1e;
+  --border:#222;--b2:#2a2a2a;
+  --accent:#00d4aa;--a2:#3b82f6;--red:#ef4444;--ylw:#f59e0b;--grn:#22c55e;
+  --text:#e2e8f0;--t2:#64748b;--t3:#94a3b8;
+  --ub:#1d3557;--bb:#0f1623;--cb:#0d1117;--r:10px;--sb:244px;
+}
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:system-ui,sans-serif;background:#111;color:#e0e0e0;height:100vh;display:flex;flex-direction:column}
-header{padding:12px 20px;background:#1a1a1a;border-bottom:1px solid #333;display:flex;align-items:center;gap:12px}
-header h1{font-size:16px;color:#00ff88}
-#dot{width:10px;height:10px;border-radius:50%;background:#00ff88}
-#chat{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:12px}
-.msg{max-width:80%;padding:10px 14px;border-radius:12px;line-height:1.5;white-space:pre-wrap;font-size:14px}
-.user{background:#0055aa;align-self:flex-end}
-.bot{background:#2a2a2a;align-self:flex-start}
-.bot.thinking{opacity:.5}
-#bar{border-top:1px solid #333;padding:12px 20px;display:flex;gap:8px;background:#1a1a1a}
-#input{flex:1;padding:10px 14px;border-radius:8px;border:1px solid #333;background:#222;color:#e0e0e0;font-size:14px;outline:0}
-#input:focus{border-color:#0055aa}
-#send{padding:10px 20px;border-radius:8px;border:0;background:#0055aa;color:#fff;font-size:14px;cursor:pointer}
-#send:hover{background:#0066cc}
-code{background:#333;padding:2px 6px;border-radius:4px;font-size:13px}
+html,body{height:100%;overflow:hidden}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--text);display:flex}
+/* sidebar */
+#sb{width:var(--sb);flex-shrink:0;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.sb-top{padding:11px 11px 8px;border-bottom:1px solid var(--border);flex-shrink:0}
+.logo{display:flex;align-items:center;gap:7px;margin-bottom:9px}
+.lm{width:24px;height:24px;border-radius:5px;background:linear-gradient(135deg,#00d4aa,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#000}
+.ln{font-size:12px;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--a2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.ls{font-size:9px;color:var(--t2)}
+.nbtn{width:100%;padding:6px 9px;border-radius:6px;border:1px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s}
+.nbtn:hover{background:var(--bg4);color:var(--text);border-color:var(--a2)}
+.sbl{padding:6px 11px 2px;font-size:9px;color:var(--t2);text-transform:uppercase;letter-spacing:.8px;flex-shrink:0}
+.hl{flex:1;overflow-y:auto;padding:0 5px 5px}
+.hl::-webkit-scrollbar{width:3px}
+.hl::-webkit-scrollbar-thumb{background:var(--b2)}
+.hi{padding:5px 7px;border-radius:5px;cursor:pointer;font-size:11px;color:var(--t3);display:flex;align-items:center;gap:5px;transition:all .15s}
+.hi:hover{background:var(--bg3);color:var(--text)}
+.hi.active{background:var(--bg4);color:var(--text);border-left:2px solid var(--accent)}
+.hi-t{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hi-d{display:none;background:none;border:none;color:var(--red);cursor:pointer;font-size:10px;padding:1px 3px}
+.hi:hover .hi-d{display:block}
+.sb-foot{flex-shrink:0;border-top:1px solid var(--border);padding:8px 11px;display:flex;flex-direction:column;gap:6px}
+.ws-btn{width:100%;padding:6px 9px;border-radius:5px;border:1px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:11px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:all .2s;text-align:left}
+.ws-btn:hover{background:var(--bg4);color:var(--text);border-color:var(--accent)}
+#wsp{font-size:9.5px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.open-ws{font-size:10px;color:var(--accent);cursor:pointer;background:none;border:none;text-align:left;padding:0}
+.open-ws:hover{text-decoration:underline}
+/* main */
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+header{flex-shrink:0;height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 13px;background:var(--bg2);border-bottom:1px solid var(--border)}
+.hc{display:flex;align-items:center;gap:6px}
+.sd{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 5px var(--accent);transition:all .3s}
+.sd.busy{background:var(--ylw);box-shadow:0 0 5px var(--ylw)}
+.sd.err{background:var(--red);box-shadow:0 0 5px var(--red)}
+.stxt{font-size:11px;color:var(--t3)}
+.tog{display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:5px;border:1px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:11px;cursor:pointer;transition:all .2s}
+.tog:hover{border-color:var(--a2);color:var(--text)}
+.tog.on{border-color:var(--accent);background:rgba(0,212,170,.08);color:var(--accent)}
+/* chat */
+#chat{flex:1;overflow-y:auto;padding:16px 0;display:flex;flex-direction:column;scroll-behavior:smooth}
+#chat::-webkit-scrollbar{width:4px}
+#chat::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
+#empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:13px;padding:40px 20px}
+.ei{width:46px;height:46px;border-radius:11px;background:linear-gradient(135deg,rgba(0,212,170,.1),rgba(59,130,246,.1));border:1px solid rgba(0,212,170,.2);display:flex;align-items:center;justify-content:center;font-size:20px}
+#empty h2{font-size:14px;font-weight:600}
+#empty p{font-size:12px;color:var(--t2);text-align:center;max-width:300px;line-height:1.7}
+.chips{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;margin-top:2px}
+.chip{padding:5px 12px;border-radius:16px;border:1px solid var(--b2);background:var(--bg3);color:var(--t3);font-size:11px;cursor:pointer;transition:all .2s}
+.chip:hover{border-color:var(--accent);color:var(--text);background:rgba(0,212,170,.05)}
+/* messages */
+.row{display:flex;padding:0;animation:fu .17s ease}
+@keyframes fu{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.row.user{flex-direction:row-reverse}
+.row+.row{margin-top:2px}
+.row.gap{margin-top:13px}
+.av{flex-shrink:0;width:24px;height:24px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;margin:0 9px;align-self:flex-start;margin-top:4px}
+.av-b{background:linear-gradient(135deg,#042a20,#061525);border:1px solid rgba(0,212,170,.3);color:var(--accent)}
+.av-u{background:linear-gradient(135deg,#1a3a6b,#1d4ed8);color:#bfdbfe}
+.bub{max-width:min(80%,800px);padding:9px 13px;font-size:13.5px;line-height:1.75;word-break:break-word}
+.bub.bot{background:var(--bb);border:1px solid var(--border);border-left:2px solid var(--accent);border-radius:4px var(--r) var(--r) var(--r)}
+.bub.user{background:var(--ub);border:1px solid #1e3a5f;border-radius:var(--r) 4px var(--r) var(--r);color:#dbeafe;white-space:pre-wrap}
+.bub.thinking{opacity:.5}
+.typing{display:flex;gap:4px;align-items:center;padding:2px 0}
+.typing b{width:4px;height:4px;border-radius:50%;background:var(--accent);animation:bl 1.1s ease-in-out infinite}
+.typing b:nth-child(2){animation-delay:.18s}.typing b:nth-child(3){animation-delay:.36s}
+@keyframes bl{0%,80%,100%{opacity:.2}40%{opacity:1}}
+/* tool cards */
+.tc{margin:4px 0;border-radius:6px;overflow:hidden;border:1px solid rgba(59,130,246,.18);background:rgba(59,130,246,.04);font-size:11px}
+.tc-h{display:flex;align-items:center;gap:5px;padding:4px 8px;background:rgba(59,130,246,.07);border-bottom:1px solid rgba(59,130,246,.1)}
+.tc-n{flex:1;color:var(--a2);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10.5px}
+.tc-s{font-size:9px;padding:1px 5px;border-radius:3px;font-weight:600;flex-shrink:0}
+.tc-s.run{background:rgba(245,158,11,.15);color:var(--ylw)}
+.tc-s.ok{background:rgba(34,197,94,.1);color:var(--grn)}
+.tc-s.fail{background:rgba(239,68,68,.1);color:var(--red)}
+.tc-b{padding:3px 8px;color:var(--t2);font-family:monospace;font-size:10.5px;max-height:70px;overflow:auto;white-space:pre-wrap}
+/* build summary */
+.build-summary{margin-top:9px;padding:8px 11px;background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.15);border-radius:7px;font-size:12px}
+.bs-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.bs-title span{color:var(--accent);font-weight:600}
+.bs-files{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:7px}
+.bs-file{padding:2px 7px;border-radius:4px;background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.15);color:var(--t3);font-size:10px;font-family:monospace}
+.bs-btns{display:flex;gap:6px}
+.bs-btn{padding:4px 11px;border-radius:5px;border:1px solid rgba(0,212,170,.25);background:rgba(0,212,170,.07);color:var(--accent);font-size:11px;cursor:pointer;transition:all .2s}
+.bs-btn:hover{background:rgba(0,212,170,.14);border-color:var(--accent)}
+.retry-bar{display:flex;align-items:center;gap:6px;margin:6px 0;padding:5px 8px;background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.15);border-radius:5px;font-size:11px;color:var(--ylw)}
+.cont-bar{display:flex;align-items:center;gap:6px;margin:4px 0;padding:4px 8px;background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.12);border-radius:4px;font-size:10.5px;color:var(--a2)}
+/* markdown */
+.bub h1{font-size:1.2em;margin:10px 0 4px}.bub h2{font-size:1.1em;margin:9px 0 3px}.bub h3{font-size:1em;margin:8px 0 2px;font-weight:600}
+.bub h1:first-child,.bub h2:first-child,.bub h3:first-child{margin-top:0}
+.bub p{margin:4px 0}.bub p:first-child{margin-top:0}.bub p:last-child{margin-bottom:0}
+.bub ul,.bub ol{padding-left:16px;margin:4px 0}.bub li{margin:2px 0}
+.bub strong{font-weight:700;color:#f1f5f9}.bub em{font-style:italic;color:#cbd5e1}
+.bub a{color:#60a5fa;text-decoration:none}.bub a:hover{text-decoration:underline}
+.bub blockquote{border-left:3px solid var(--a2);padding:2px 9px;margin:6px 0;color:var(--t3);background:rgba(59,130,246,.05);border-radius:0 4px 4px 0}
+.bub hr{border:none;border-top:1px solid var(--b2);margin:8px 0}
+.bub table{border-collapse:collapse;width:100%;margin:6px 0;font-size:12px}
+.bub th,.bub td{border:1px solid var(--b2);padding:4px 9px}
+.bub th{background:var(--bg3);color:var(--accent);font-weight:600}
+.bub :not(pre)>code{background:rgba(0,212,170,.08);border:1px solid rgba(0,212,170,.15);color:#86efac;padding:1px 4px;border-radius:3px;font-family:monospace;font-size:12px}
+.codeblock{margin:7px 0;border-radius:6px;overflow:hidden;border:1px solid #21262d;background:var(--cb)}
+.codeblock:first-child{margin-top:0}.codeblock:last-child{margin-bottom:0}
+.cb-h{display:flex;justify-content:space-between;align-items:center;padding:4px 11px;background:#161b22;border-bottom:1px solid #21262d}
+.cb-l{font-size:10px;color:var(--t2);font-family:monospace}
+.cp{font-size:10px;color:var(--t2);background:none;border:1px solid #30363d;border-radius:3px;padding:2px 7px;cursor:pointer;transition:all .2s}
+.cp:hover{color:var(--text);border-color:var(--accent)}.cp.ok{color:var(--accent);border-color:var(--accent)}
+.codeblock pre{margin:0;padding:11px 13px;overflow-x:auto;font-family:'Consolas','Cascadia Code',monospace;font-size:12.5px;line-height:1.55;color:#e6edf3}
+/* input */
+#bar{flex-shrink:0;background:var(--bg2);border-top:1px solid var(--border);padding:9px 13px 11px}
+.iw{display:flex;gap:7px;align-items:flex-end;background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r);padding:7px 9px;transition:border-color .2s,box-shadow .2s}
+.iw:focus-within{border-color:var(--a2);box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+#inp{flex:1;background:none;border:none;outline:none;color:var(--text);font-size:13.5px;line-height:1.55;resize:none;max-height:110px;min-height:22px;font-family:inherit}
+#inp::placeholder{color:var(--t2)}
+.ib{width:28px;height:28px;border-radius:6px;border:1px solid var(--b2);background:transparent;color:var(--t2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;font-size:13px}
+.ib:hover{border-color:var(--a2);color:var(--a2)}.ib.on{border-color:var(--a2);background:rgba(59,130,246,.15);color:var(--a2)}
+#sbtn{width:30px;height:30px;border-radius:7px;border:none;background:var(--a2);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .2s,opacity .2s}
+#sbtn:hover{background:#2563eb}#sbtn:disabled{opacity:.3;cursor:not-allowed}
+.bhint{text-align:center;font-size:10px;color:var(--t2);margin-top:5px}
+/* image attach */
+#img-preview{display:flex;align-items:center;gap:7px;padding:5px 9px;margin-bottom:5px;background:var(--bg3);border:1px solid var(--b2);border-radius:7px;font-size:11px;color:var(--t3)}
+#img-preview img{height:40px;border-radius:4px;object-fit:cover}
+.img-in-chat{max-width:260px;max-height:200px;border-radius:7px;display:block;margin:5px 0;border:1px solid var(--border)}
+/* continue bar */
+.continue-bar{display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 10px;background:rgba(0,212,170,.05);border:1px solid rgba(0,212,170,.15);border-radius:7px;font-size:11px}
+.continue-bar span{flex:1;color:var(--t3)}.continue-bar b{color:var(--accent)}
+/* modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:100;align-items:center;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:var(--bg3);border:1px solid var(--b2);border-radius:var(--r);padding:20px;width:440px;max-width:92vw}
+.modal h3{font-size:14px;margin-bottom:4px}
+.modal p{font-size:12px;color:var(--t2);margin-bottom:10px;line-height:1.6}
+.modal input{width:100%;padding:8px 10px;background:var(--bg4);border:1px solid var(--b2);border-radius:6px;color:var(--text);font-size:12.5px;outline:none;margin-bottom:3px;font-family:monospace}
+.modal input:focus{border-color:var(--a2)}
+.mhint{font-size:10px;color:var(--t2);margin-bottom:10px}
+.mbtns{display:flex;gap:7px;justify-content:flex-end;flex-wrap:wrap}
+.mb{padding:6px 13px;border-radius:5px;border:1px solid var(--b2);background:var(--bg4);color:var(--t3);font-size:12px;cursor:pointer;transition:all .2s}
+.mb:hover{color:var(--text);border-color:var(--a2)}
+.mb.p{background:var(--a2);border-color:var(--a2);color:#fff}.mb.p:hover{background:#2563eb}
 </style>
 </head>
 <body>
-<header>
-  <div id="dot"></div>
-  <h1>VortexDQ AI</h1>
-</header>
-<div id="chat">
-  <div class="msg bot">Ready. Ask anything.</div>
+
+<!-- Workspace modal -->
+<div class="modal-bg" id="wsm">
+  <div class="modal">
+    <h3>Set Workspace Folder</h3>
+    <p>VortexDQ will create all project files here. You can type a path or click <b>Browse</b> to open a folder dialog.</p>
+    <input id="wsi" placeholder="C:\Users\You\Projects\myapp" spellcheck="false">
+    <div class="mhint" id="wsi-hint">Default: <span id="def-ws" style="color:var(--accent);font-family:monospace;font-size:10px"></span></div>
+    <div class="mbtns">
+      <button class="mb" id="browse-btn" onclick="browseFolder()">📁 Browse…</button>
+      <button class="mb" onclick="useDefault()">Use Default</button>
+      <button class="mb" onclick="closeWsm()">Cancel</button>
+      <button class="mb p" onclick="confirmWs()">Set Folder ↵</button>
+    </div>
+  </div>
 </div>
-<div id="bar">
-  <input id="input" placeholder="Message..." autofocus>
-  <button id="send">Send</button>
+
+<!-- Sidebar -->
+<div id="sb">
+  <div class="sb-top">
+    <div class="logo">
+      <div class="lm">VQ</div>
+      <div><div class="ln">VortexDQ AI</div><div class="ls">vortexdq.com</div></div>
+    </div>
+    <button class="nbtn" onclick="newChat()">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      New Chat
+    </button>
+  </div>
+  <div class="sbl">Conversations</div>
+  <div class="hl" id="hl"></div>
+  <div class="sb-foot">
+    <button class="ws-btn" onclick="openWsm()">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      Set Workspace
+    </button>
+    <div id="wsp" style="font-size:9.5px;color:var(--t2)">Loading…</div>
+    <button class="open-ws" onclick="openInExplorer()">📂 Open in Explorer</button>
+  </div>
 </div>
+
+<!-- Main -->
+<div id="main">
+  <header>
+    <div class="hc">
+      <div class="sd" id="dot"></div>
+      <span class="stxt" id="stxt">Online</span>
+    </div>
+    <div class="hc">
+      <button class="tog" id="abtn" onclick="toggleAgent()">⚡ Agent Mode</button>
+      <button class="tog" id="wbtn" onclick="toggleWeb()">🌐 Web</button>
+    </div>
+  </header>
+
+  <div id="chat">
+    <div id="empty">
+      <div class="ei">⚡</div>
+      <h2>VortexDQ AI</h2>
+      <p>Local AI by <a href="https://vortexdq.com" target="_blank" style="color:var(--accent);text-decoration:none">vortexdq.com</a><br>Turn on <b>Agent Mode</b> and ask me to build anything.</p>
+      <div class="chips">
+        <div class="chip" onclick="suggest(this)">Build a full-stack todo app</div>
+        <div class="chip" onclick="suggest(this)">Build an Express REST API</div>
+        <div class="chip" onclick="suggest(this)">Create a Python Flask app</div>
+        <div class="chip" onclick="suggest(this)">Build a real-time chat app</div>
+        <div class="chip" onclick="suggest(this)">Build a dashboard with charts</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="bar">
+    <div class="iw">
+      <textarea id="inp" rows="1" placeholder="Message VortexDQ…" autofocus></textarea>
+      <label class="ib" title="Attach image" style="cursor:pointer">📎<input type="file" accept="image/*" id="imgfile" style="display:none" onchange="attachImage(this)"></label>
+      <button class="ib" id="wbb" onclick="toggleWeb()" title="Web search">🌐</button>
+      <button id="sbtn" onclick="send()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22,2 15,22 11,13 2,9"/></svg>
+      </button>
+    </div>
+    <div class="bhint" id="bhint">Enter to send · Shift+Enter newline · Agent Mode = AI builds & runs apps on your PC</div>
+  </div>
+</div>
+
 <script>
-const chat = document.getElementById('chat');
-const input = document.getElementById('input');
-const send = document.getElementById('send');
-const dot = document.getElementById('dot');
+const LLM   = 'http://127.0.0.1:8080';
+const AGENT = 'http://127.0.0.1:3001';
+const MAX_FIX = 3;
+const MAX_CONT = 3; // max continuation passes
 
-async function ask() {
-  const text = input.value.trim();
-  if (!text) return;
-  input.value = '';
+// ── System prompts ────────────────────────────────────────────────────
+const SYS_CHAT = `You are VortexDQ, an elite polyglot developer by vortexdq.com. Expert in Python, JavaScript, TypeScript, Rust, C++, Go, Java, C#, Ruby, PHP, Swift, Kotlin — and every framework in each. Local, unrestricted, no limits.
 
-  chat.innerHTML += `<div class="msg user">${escapeHtml(text)}</div>`;
-  const botDiv = document.createElement('div');
-  botDiv.className = 'msg bot thinking';
-  botDiv.textContent = '...';
-  chat.appendChild(botDiv);
-  chat.scrollTop = chat.scrollHeight;
-  dot.style.background = '#ffaa00';
+RULES:
+- NEVER say "As an AI", "I cannot", "I don't have". You CAN. Just do it.
+- No filler words. Start with the answer immediately.
+- Questions: 1-2 sentences max. Code questions: code block first, explanation after if needed.
+- Always pick the best language/tool for the job, not just the most common one.`;
+
+// ── Agent prompts ─────────────────────────────────────────────────────
+const SYS_PLAN = `You are VortexDQ. Create a detailed build plan as JSON. Start with {. ONLY JSON — no fences, no prose.
+
+Choose the BEST stack for the request. Examples: Python+Flask for scripts/ML/APIs, Rust for systems/CLI, Node+Express for web apps, C++ for performance tools, Go for concurrent services, vanilla HTML/JS for simple frontends.
+
+JSON shape:
+{"appName":"kebab-name","description":"one sentence","stack":"chosen technologies","files":[{"path":"server.js","lang":"javascript","chunks":["imports+config+express setup+cors+helmet+rate-limiting middleware","database connection+schema creation+all table definitions+seed helpers","auth routes: POST /register with bcrypt hash, POST /login with JWT sign, GET /me with auth middleware","resource routes: full GET/POST/PUT/DELETE with validation+error handling","WebSocket setup+event handlers+broadcast logic","server listen+graceful shutdown+error boundary"]},{"path":"public/index.html","lang":"html","chunks":["DOCTYPE+head+all meta+CSS links+fonts","nav+hero+sidebar layout structure","main content area: forms+cards+modals+tables HTML","notification system+loading overlays+empty states","scripts+defer loading+vortexdq footer"]},{"path":"public/style.css","lang":"css","chunks":["reset+CSS variables+dark theme palette+typography scale","layout grid+flex utilities+sidebar+header+main","card+button+form+input+badge+tag components","modal+dropdown+toast+tooltip+overlay components","animations+keyframes+transitions+hover states","responsive breakpoints: tablet 768px+mobile 480px+print"]},{"path":"public/app.js","lang":"javascript","chunks":["constants+state object+DOM selectors+utility functions","API helper with fetch wrapper+error handling+auth header","auth module: login+register+logout+session persistence","data module: CRUD operations+optimistic updates+cache","render module: all templates+list rendering+modal population","event module: all event listeners+form submit handlers+keyboard shortcuts","init function+WebSocket connection+real-time event handlers"]}],"setupCommands":["npm install"],"startCommand":"node server.js","features":["JWT auth with bcrypt + session persistence","SQLite/PostgreSQL with full schema migrations","complete CRUD with input validation and error messages","WebSocket real-time updates","responsive dark-themed UI with animations","toast notifications and loading states"]}
+
+Rules:
+- Pick the RIGHT language. Don't default to Node.js if Python/Rust/Go is better.
+- 5-7 files minimum. Each file must have 5-7 chunks listing EXACT functions/routes/classes/components to write.
+- Chunks must be specific — name every function, route, or component that will be written in that chunk.
+- Always include package.json or equivalent, setup commands, and start command.
+- Output ONLY the JSON object.`;
+
+const SYS_CHUNK = (plan, fileInfo, chunkDesc, existingCode) =>
+`You are a senior ${plan.stack} engineer writing production code for ${plan.appName}.
+Project: ${plan.description}
+Features required: ${(plan.features||[]).join(', ')}.
+File: ${fileInfo.path}
+
+${existingCode ? `Existing code so far (DO NOT repeat, continue from the END):\n\`\`\`${fileInfo.lang}\n${existingCode.slice(-3000)}\n\`\`\`\n` : ''}
+YOUR TASK — write this section completely: ${chunkDesc}
+
+STRICT RULES — violations will break the app:
+1. Raw code ONLY. Zero explanation. Zero markdown fences. Zero comments saying "rest of code here".
+2. Every function must be FULLY implemented — real logic, real SQL queries, real error handling. No stubs, no "TODO", no "...".
+3. Take your time and write every line properly. Quality over speed. A correct 150-line function beats a broken 20-line one.
+4. If this is the first section: start with "// vortexdq.com" (or # for Python, /* */ for CSS).
+5. If this is an HTML file's last section: add <footer class="vqdq-footer">Built with <a href="https://vortexdq.com" target="_blank">vortexdq.com</a></footer> before </body>.
+6. No truncation. Write every named function, route, and component in full.
+7. Code continues directly from existing code without any gap or repetition.`;
+
+const SYS_EXPLAIN = `You are VortexDQ. The app was just built and files were written to disk. Write a brief usage guide — exactly 3 sections, under 100 words total. No preamble. Start directly with "**How to start:**".
+
+**How to start:** [exact terminal command]
+
+**What it does:** [1-2 sentences]
+
+**Features:**
+- [feature]
+- [feature]
+- [feature]`;
+
+const SYS_AGENT_FALLBACK = `You are VortexDQ. Build the requested app. Output ONLY code blocks — no prose, no examples, no explanations.
+
+Format every file as:
+\`\`\`lang:path/to/file.ext
+[complete code]
+\`\`\`
+
+Run commands as:
+\`\`\`bash:run
+npm install
+\`\`\`
+
+Requirements: every file 100% complete, no truncation, no placeholders. Include package.json and all config files.`;
+
+// ── State ─────────────────────────────────────────────────────────────
+const history = [];
+let busy=false, webOn=false, agentOn=false;
+let workspace = localStorage.getItem('workspace') || '';
+let currentId = null;
+let currentPlan = null;
+let attachedImage = null; // {name, dataUrl, type}
+
+const chatEl  = document.getElementById('chat');
+const inpEl   = document.getElementById('inp');
+const sendEl  = document.getElementById('sbtn');
+const dotEl   = document.getElementById('dot');
+const stxtEl  = document.getElementById('stxt');
+const wspEl   = document.getElementById('wsp');
+
+async function init() {
+  try {
+    const d = await (await fetch(AGENT+'/default-workspace')).json();
+    document.getElementById('def-ws').textContent = d.path || '';
+    if (!workspace) { workspace = d.path || ''; localStorage.setItem('workspace', workspace); }
+  } catch(_) {}
+  wspEl.textContent = workspace || 'Not set';
+  loadHistList();
+}
+init();
+
+inpEl.addEventListener('input', () => { inpEl.style.height='auto'; inpEl.style.height=Math.min(inpEl.scrollHeight,110)+'px'; });
+inpEl.addEventListener('keydown', e => { if (e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();} });
+
+// ── Status ────────────────────────────────────────────────────────────
+function setStatus(s, label) {
+  dotEl.className='sd'+(s==='busy'?' busy':s==='err'?' err':'');
+  stxtEl.textContent=label||{busy:'Working…',err:'Error',online:'Online'}[s]||s;
+}
+
+// ── Toggles ───────────────────────────────────────────────────────────
+function toggleAgent() {
+  agentOn=!agentOn;
+  document.getElementById('abtn').classList.toggle('on',agentOn);
+  document.getElementById('bhint').textContent=agentOn
+    ?'⚡ Agent ON — AI will write ALL files to: '+workspace
+    :'Enter to send · Shift+Enter newline · Agent Mode = AI builds & runs apps on your PC';
+  inpEl.placeholder=agentOn?'What do you want me to build? (be specific!)':'Message VortexDQ…';
+}
+function toggleWeb() {
+  webOn=!webOn;
+  ['wbtn','wbb'].forEach(id=>document.getElementById(id)?.classList.toggle('on',webOn));
+}
+
+// ── Workspace modal ───────────────────────────────────────────────────
+function openWsm() {
+  document.getElementById('wsi').value=workspace||'';
+  document.getElementById('wsm').classList.add('show');
+  setTimeout(()=>document.getElementById('wsi').focus(),60);
+}
+function closeWsm() { document.getElementById('wsm').classList.remove('show'); }
+function confirmWs() {
+  const v=document.getElementById('wsi').value.trim();
+  if (v) { workspace=v; localStorage.setItem('workspace',v); wspEl.textContent=v; }
+  closeWsm();
+  if (agentOn) document.getElementById('bhint').textContent='⚡ Agent ON — AI will write ALL files to: '+workspace;
+}
+function useDefault() { document.getElementById('wsi').value=document.getElementById('def-ws').textContent; }
+document.getElementById('wsi').addEventListener('keydown',e=>{if(e.key==='Enter')confirmWs();});
+document.getElementById('wsm').addEventListener('click',e=>{if(e.target.id==='wsm')closeWsm();});
+
+async function browseFolder() {
+  const btn=document.getElementById('browse-btn');
+  const inp=document.getElementById('wsi');
+  const hint=document.getElementById('wsi-hint');
+  btn.disabled=true; btn.textContent='Opening…';
+  hint.textContent='Folder dialog opened — select a folder in the Windows window that appeared…';
+  try {
+    const d=await(await fetch(AGENT+'/choose-folder',{signal:AbortSignal.timeout(60000)})).json();
+    if (d.folder) {
+      inp.value=d.folder;
+      hint.textContent='✓ Folder selected!';
+    } else if (d.cancelled) {
+      hint.textContent='Cancelled. Type a path manually or click Use Default.';
+    } else {
+      hint.textContent='No folder returned. Type a path below.';
+    }
+  } catch(e) {
+    hint.textContent='Dialog error — type path manually. ('+e.message+')';
+  }
+  btn.disabled=false; btn.textContent='📁 Browse…';
+}
+
+async function openInExplorer() {
+  const ws=workspace; if(!ws){alert('Set a workspace first.');return;}
+  await fetch(AGENT+'/open-folder',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({folderPath:ws})}).catch(()=>{});
+}
+
+// ── File extractor — handles multiple formats ─────────────────────────
+function extractFiles(text) {
+  const items = [];
+  const lines = text.split('\n');
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // RUN: or CMD: direct command markers
+    const runMarker = line.match(/^(?:RUN|CMD|EXECUTE|COMMAND):\s*(.+)$/i);
+    if (runMarker) { items.push({type:'run', cmd:runMarker[1].trim()}); i++; continue; }
+
+    // Code fence start
+    const fenceStart = line.match(/^```(\S*)/);
+    if (fenceStart) {
+      const rawTag = fenceStart[1]; // e.g. "javascript:src/server.js" or "javascript"
+
+      // Find closing fence
+      let j = i+1;
+      while (j < lines.length && !lines[j].match(/^```\s*$/)) j++;
+      const content = lines.slice(i+1, j).join('\n');
+
+      let lang = rawTag;
+      let filepath = null;
+
+      // Format 1: ```lang:path
+      if (rawTag.includes(':')) {
+        const colon = rawTag.indexOf(':');
+        lang = rawTag.slice(0, colon);
+        filepath = rawTag.slice(colon+1).trim();
+      }
+
+      // Format 2: look at the previous non-empty line for a heading/filename
+      if (!filepath) {
+        let prev = i-1;
+        while (prev >= 0 && lines[prev].trim() === '') prev--;
+        if (prev >= 0) {
+          const pl = lines[prev].trim();
+          const m = pl.match(/^[#*_\s]*[`"']?([\w][\w.\-/\\]+\.[\w]+)[`"']?[:\s]*$/) ||
+                    pl.match(/^(?:File|Filename|Path|Create|Write)[:\s]+[`"']?([\w][\w.\-/\\]+\.[\w]+)[`"']?$/i);
+          if (m) filepath = m[1];
+        }
+      }
+
+      // Format 3: first line of code is a filename comment
+      if (!filepath && content.trim()) {
+        const first = content.trim().split('\n')[0].trim();
+        const m = first.match(/^\/\/\s*([\w][\w.\-/\\]*\.[\w]+)\s*$/) ||
+                  first.match(/^#\s*([\w][\w.\-/\\]*\.[\w]+)\s*$/) ||
+                  first.match(/^<!--\s*([\w][\w.\-/\\]*\.[\w]+)\s*-->$/) ||
+                  first.match(/^\/\*\s*([\w][\w.\-/\\]*\.[\w]+)\s*\*\/\s*$/);
+        if (m) filepath = m[1];
+      }
+
+      const isCmd = ['bash','sh','shell','cmd','powershell','bat'].includes(lang.toLowerCase()) &&
+                    (!filepath || ['run','cmd','install','setup','commands','terminal','shell'].includes(filepath.toLowerCase()));
+
+      if (isCmd) {
+        const cmds = content.split('\n').map(l=>l.trim()).filter(l=>l&&!l.startsWith('#')&&!l.startsWith('//')&&l.length>1);
+        cmds.forEach(cmd=>items.push({type:'run',cmd}));
+      } else if (filepath) {
+        const rel = filepath.replace(/^[/\\]+/,'').replace(/\.\.\//g,'').replace(/\.\.[/\\]/g,'');
+        // Avoid saving empty or tiny files
+        if (content.trim().length >= 5) {
+          items.push({type:'file', path:rel, content, lang});
+        }
+      }
+
+      i = j+1; continue;
+    }
+
+    i++;
+  }
+
+  return items;
+}
+
+// ── Tool card ─────────────────────────────────────────────────────────
+function addCard(bub, icon, label, detail) {
+  const id='tc'+Date.now()+Math.random().toString(36).slice(2,5);
+  const d=document.createElement('div');
+  d.className='tc';
+  d.innerHTML=`<div class="tc-h"><span style="font-size:11px">${icon}</span><span class="tc-n">${esc(label)}</span><span class="tc-s run" id="${id}">…</span></div><div class="tc-b">${esc((detail||'').slice(0,120))}</div>`;
+  bub.appendChild(d); chatEl.scrollTop=chatEl.scrollHeight;
+  return {st:document.getElementById(id), body:d.querySelector('.tc-b')};
+}
+
+// ── Execute items ─────────────────────────────────────────────────────
+async function executeItems(items, bub, ws) {
+  const failures=[], saved=[];
+  const files=items.filter(x=>x.type==='file');
+  const runs=items.filter(x=>x.type==='run');
+
+  // Write all files (parallel)
+  await Promise.all(files.map(async item => {
+    const {st,body}=addCard(bub,'📄',item.path,'');
+    try {
+      const r=await post('/file/write',{filePath:item.path,content:item.content,workspace:ws});
+      if (r.ok) {
+        st.className='tc-s ok'; st.textContent='saved';
+        const lines=(item.content.match(/\n/g)||[]).length+1;
+        const kb=(r.bytes/1024).toFixed(1);
+        body.textContent=`${r.path} — ${lines} lines, ${kb}KB`;
+        saved.push({path:item.path, lines, bytes:r.bytes});
+      } else {
+        st.className='tc-s fail'; st.textContent='failed';
+        body.textContent=r.error||'write error';
+        failures.push(`Write ${item.path}: ${r.error}`);
+      }
+    } catch(e) { st.className='tc-s fail'; st.textContent='error'; body.textContent=e.message; failures.push(`Write ${item.path}: ${e.message}`); }
+  }));
+
+  // Run commands in order
+  for (const item of runs) {
+    const {st,body}=addCard(bub,'⚡',item.cmd,item.cmd);
+    try {
+      const r=await post('/run',{command:item.cmd,workspace:ws});
+      if (r.ok) { st.className='tc-s ok'; st.textContent='done'; if(r.output) body.textContent=r.output.slice(0,300); }
+      else { st.className='tc-s fail'; st.textContent='failed'; body.textContent=(r.output||r.error||'').slice(0,300); failures.push(`"${item.cmd}": ${(r.output||r.error||'').slice(0,200)}`); }
+    } catch(e) { st.className='tc-s fail'; st.textContent='error'; body.textContent=e.message; failures.push(`"${item.cmd}": ${e.message}`); }
+  }
+
+  return {failures, saved};
+}
+
+// ── Stream LLM with continuation ──────────────────────────────────────
+async function streamLLM(msgs, bub, note='') {
+  let full='', buf='', first=true, timer=null;
+
+  function liveRender() {
+    timer=null;
+    const open=(full.match(/```/g)||[]).length%2;
+    bub.innerHTML=note+(open
+      ?`<pre style="white-space:pre-wrap;font-size:13px;color:var(--t3);padding:2px 0">${esc(full)}</pre>`
+      :renderMd(full));
+    chatEl.scrollTop=chatEl.scrollHeight;
+  }
+
+  const res=await fetch(LLM+'/v1/chat/completions',{
+    method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({model:'qwen2.5-coder',messages:msgs,stream:true,temperature:0.2,top_p:0.95,repeat_penalty:1.05,max_tokens:10000})
+  });
+  if (!res.ok) throw new Error('LLM HTTP '+res.status);
+
+  const reader=res.body.getReader(), dec=new TextDecoder();
+  while (true) {
+    const {done,value}=await reader.read(); if(done) break;
+    buf+=dec.decode(value,{stream:true});
+    const lines=buf.split('\n'); buf=lines.pop();
+    for (const ln of lines) {
+      if (!ln.startsWith('data: ')||ln==='data: [DONE]') continue;
+      try {
+        const tok=JSON.parse(ln.slice(6))?.choices?.[0]?.delta?.content||'';
+        full+=tok;
+        if (first){first=false;bub.classList.remove('thinking');bub.innerHTML=note;}
+        if (!timer) timer=setTimeout(liveRender,80);
+      } catch(_){}
+    }
+  }
+  if (timer){clearTimeout(timer);liveRender();}
+  return full;
+}
+
+// Stream with auto-continuation if response was cut off
+async function streamFull(msgs, bub, note='') {
+  let full = await streamLLM(msgs, bub, note);
+
+  for (let pass=0; pass<MAX_CONT; pass++) {
+    const openBlocks=(full.match(/```/g)||[]).length%2;
+    // Also detect if cut off mid-sentence at end
+    const lastChars=full.slice(-20).trim();
+    const cutOff=openBlocks>0 || (lastChars.length>0 && !lastChars.match(/[.!?`})\]"']\s*$/));
+    if (!cutOff) break;
+
+    const contBar=document.createElement('div');
+    contBar.className='cont-bar';
+    contBar.textContent='↳ Response cut off — continuing…';
+    bub.appendChild(contBar);
+
+    const contMsgs=[...msgs,{role:'assistant',content:full},{role:'user',content:'Continue EXACTLY where you stopped. Do NOT repeat anything. Do NOT restart. Just continue from the exact point the response ended.'}];
+    const contBub=addBubble('bot','',true);
+    const more=await streamLLM(contMsgs,contBub,'');
+    full+='\n'+more;
+  }
+
+  return full;
+}
+
+// ── Markdown renderer ─────────────────────────────────────────────────
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function copyCode(id,btn){
+  const el=document.getElementById(id); if(!el) return;
+  navigator.clipboard.writeText(el.innerText).then(()=>{btn.textContent='Copied!';btn.classList.add('ok');setTimeout(()=>{btn.textContent='Copy';btn.classList.remove('ok');},2000);});
+}
+
+function renderMd(raw) {
+  if (!raw) return '';
+  const parts=raw.split(/(```[\s\S]*?```)/g);
+  return parts.map((p,i)=>{
+    if (i%2===1) {
+      const m=p.match(/^```([\w:.\-/\\]*)\n?([\s\S]*?)```$/);
+      const rawTag=m?.[1]||'';
+      const lang=rawTag.split(':')[0]||'text';
+      const label=rawTag.includes(':')?rawTag.slice(lang.length+1):lang;
+      const code=m?m[2]:p.slice(3,-3);
+      const id='c'+Math.random().toString(36).slice(2,9);
+      return `<div class="codeblock"><div class="cb-h"><span class="cb-l">${esc(label||lang)}</span><button class="cp" onclick="copyCode('${id}',this)">Copy</button></div><pre><code id="${id}">${esc(code)}</code></pre></div>`;
+    }
+    let h=esc(p);
+    h=h.replace(/^### (.+)$/mg,'<h3>$1</h3>').replace(/^## (.+)$/mg,'<h2>$1</h2>').replace(/^# (.+)$/mg,'<h1>$1</h1>');
+    h=h.replace(/^---+$/mg,'<hr>').replace(/^&gt; (.+)$/mg,'<blockquote>$1</blockquote>');
+    h=h.replace(/\*\*\*(.+?)\*\*\*/g,'<strong><em>$1</em></strong>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>');
+    h=h.replace(/`([^`\n]+)`/g,'<code>$1</code>');
+    h=h.replace(/((?:^[-*] .+\n?)+)/mg,x=>'<ul>'+x.trim().split('\n').map(l=>`<li>${l.replace(/^[-*] /,'')}</li>`).join('')+'</ul>');
+    h=h.replace(/((?:^\d+\. .+\n?)+)/mg,x=>'<ol>'+x.trim().split('\n').map(l=>`<li>${l.replace(/^\d+\. /,'')}</li>`).join('')+'</ol>');
+    h=h.split(/\n{2,}/).map(b=>{const t=b.trim();return /^<(h[1-3]|ul|ol|hr|blockquote)/.test(t)?t:`<p>${b.replace(/\n/g,'<br>')}</p>`;}).join('');
+    return h;
+  }).join('');
+}
+
+function addBubble(role,content,streaming){
+  document.getElementById('empty')?.remove();
+  const last=chatEl.lastElementChild, ng=!last||last.dataset.role!==role;
+  const row=document.createElement('div');
+  row.className='row '+role+(ng?' gap':''); row.dataset.role=role;
+  const av=document.createElement('div');
+  av.className='av '+(role==='user'?'av-u':'av-b'); av.textContent=role==='user'?'U':'V';
+  if(!ng)av.style.visibility='hidden';
+  const bub=document.createElement('div');
+  bub.className='bub '+role+(streaming?' thinking':'');
+  if(streaming)bub.innerHTML='<div class="typing"><b></b><b></b><b></b></div>';
+  else bub.innerHTML=role==='bot'?renderMd(content):esc(content);
+  row.appendChild(av);row.appendChild(bub);chatEl.appendChild(row);chatEl.scrollTop=chatEl.scrollHeight;
+  return bub;
+}
+
+// ── HTTP helpers ──────────────────────────────────────────────────────
+async function post(path, data) {
+  const r=await fetch(AGENT+path,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+  return r.json();
+}
+
+// ── Web search ────────────────────────────────────────────────────────
+async function webSearch(q) {
+  const d=await(await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(q)}&format=json&no_redirect=1&no_html=1&skip_disambig=1`,{signal:AbortSignal.timeout(6000)})).json();
+  const p=[];
+  if(d.Answer)p.push('Answer: '+d.Answer);
+  if(d.AbstractText)p.push('Summary: '+d.AbstractText);
+  const t=(d.RelatedTopics||[]).filter(x=>x.Text).slice(0,4).map(x=>'• '+x.Text);
+  if(t.length)p.push('Related:\n'+t.join('\n'));
+  return p.length?p.join('\n\n'):null;
+}
+
+// ── JSON extractor: brace-counting, immune to extra text around it ────
+function extractJSON(text) {
+  const start = text.indexOf('{');
+  if (start === -1) return null;
+  let depth = 0;
+  for (let i = start; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}') { depth--; if (depth === 0) return text.slice(start, i+1); }
+  }
+  return null;
+}
+
+// ── Code block extractor: returns the largest code block content ──────
+function extractLargestCodeBlock(text) {
+  const blocks = [];
+  const re = /```[\w:.\-/\\ ]*\n?([\s\S]*?)```/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const content = m[1].trim();
+    // Skip tiny blocks and JSON-looking blocks (those are config, not code)
+    if (content.length > 30) blocks.push(content);
+  }
+  if (!blocks.length) return null;
+  return blocks.reduce((a, b) => a.length >= b.length ? a : b);
+}
+
+// ── Non-streaming plan fetch ──────────────────────────────────────────
+async function fetchPlan(userPrompt) {
+  const res = await fetch(LLM+'/v1/chat/completions', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'qwen2.5-coder',
+      messages:[{role:'system',content:SYS_PLAN},{role:'user',content:userPrompt}],
+      stream:false, temperature:0.15, max_tokens:2000
+    })
+  });
+  if (!res.ok) throw new Error('LLM HTTP '+res.status);
+  const data = await res.json();
+  const text = data.choices[0].message.content;
+  const raw = extractJSON(text);
+  if (!raw) throw new Error('no JSON found');
+  return JSON.parse(raw);
+}
+
+// ── Seed lines to force model into writing real code immediately ───────
+function seedFile(fileInfo, plan) {
+  const p = fileInfo.path.toLowerCase();
+  const l = (fileInfo.lang||'').toLowerCase();
+  const wm_js  = `// vortexdq.com\n`;
+  const wm_py  = `# vortexdq.com\n`;
+  const wm_rs  = `// vortexdq.com\n`;
+  const wm_cpp = `// vortexdq.com\n`;
+  const wm_css = `/* vortexdq.com */\n\n`;
+
+  if (p.endsWith('package.json'))
+    return `{\n  "name": "${plan.appName}",\n  "version": "1.0.0",\n  "scripts": {\n    "start": "${(plan.startCommand||'node server.js').replace(/"/g,'\\"')}",\n    "dev": "nodemon server.js"\n  },\n  "dependencies": {`;
+  if (p.endsWith('cargo.toml'))
+    return `[package]\nname = "${plan.appName}"\nversion = "0.1.0"\nedition = "2021"\n\n[dependencies]\n`;
+  if (p.endsWith('go.mod'))
+    return `module ${plan.appName}\n\ngo 1.21\n\nrequire (\n`;
+  if (p.endsWith('cmakelists.txt'))
+    return `cmake_minimum_required(VERSION 3.16)\nproject(${plan.appName})\nset(CMAKE_CXX_STANDARD 17)\n`;
+  if (p.endsWith('requirements.txt'))
+    return `flask\nflask-cors\n`;
+
+  if (l==='rust')
+    return wm_rs + `use std::io;\nuse std::collections::HashMap;\n`;
+  if (l==='cpp'||l==='c++')
+    return wm_cpp + `#include <iostream>\n#include <string>\n#include <vector>\n#include <memory>\nusing namespace std;\n`;
+  if (l==='go')
+    return wm_js + `package main\n\nimport (\n\t"fmt"\n\t"log"\n\t"net/http"\n\t"encoding/json"\n)\n`;
+  if (l==='typescript'||l==='ts')
+    return wm_js + `import express, { Request, Response, NextFunction } from 'express';\nimport cors from 'cors';\nimport path from 'path';\n`;
+  if ((l==='javascript'||l==='js') && !p.includes('public') && !p.includes('client'))
+    return wm_js + `'use strict';\nconst express = require('express');\nconst cors = require('cors');\nconst path = require('path');\nconst fs = require('fs');\n`;
+  if ((l==='javascript'||l==='js') && (p.includes('public')||p.includes('client')||p.endsWith('app.js')))
+    return wm_js + `(function(){\n  'use strict';\n`;
+  if (l==='python')
+    return wm_py + `import os\nimport json\nfrom datetime import datetime\nfrom flask import Flask, request, jsonify\nfrom flask_cors import CORS\n`;
+  if (l==='html')
+    return `<!DOCTYPE html>\n<html lang="en">\n<!-- vortexdq.com -->\n<head>\n  <meta charset="UTF-8">\n  <meta name="viewport" content="width=device-width,initial-scale=1">\n  <title>${plan.appName}</title>\n  <style>\n    .vqdq-footer{text-align:center;padding:18px;font-size:11px;color:#64748b;border-top:1px solid #1e293b;margin-top:40px}\n    .vqdq-footer a{color:#00d4aa;text-decoration:none}.vqdq-footer a:hover{text-decoration:underline}\n  </style>\n`;
+  if (l==='css')
+    return wm_css + `*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }\n\n:root {\n  --primary: #2563eb;\n  --primary-dark: #1d4ed8;\n  --bg: #0f172a;\n  --bg2: #1e293b;\n  --surface: #1e293b;\n  --text: #f1f5f9;\n  --text2: #94a3b8;\n  --border: #334155;\n  --radius: 8px;\n  --shadow: 0 4px 24px rgba(0,0,0,.4);\n}\n\n.vqdq-footer{text-align:center;padding:18px;font-size:11px;color:var(--text2,#64748b);border-top:1px solid var(--border,#1e293b);margin-top:40px}\n.vqdq-footer a{color:#00d4aa;text-decoration:none}\n.vqdq-footer a:hover{text-decoration:underline}\n`;
+  if (l==='java')
+    return wm_js + `import java.util.*;\nimport java.io.*;\n`;
+  if (l==='csharp'||l==='cs')
+    return wm_js + `using System;\nusing System.Collections.Generic;\nusing System.Linq;\n`;
+  return null;
+}
+
+// ── Extract best code from model response ──────────────────────────────
+function bestCode(text, fileInfo) {
+  // Try lang:path format first
+  const parsed = extractFiles(text).filter(x=>x.type==='file');
+  if (parsed.length) return parsed[0].content;
+  // Grab largest code block
+  const block = extractLargestCodeBlock(text);
+  if (block) return block;
+  // No fences — find first line that looks like code
+  const lines = text.trim().split('\n');
+  const start = lines.findIndex(l=>/^(import |from |const |let |var |def |class |<!DOCTYPE|<html|<\?php|\{|#!\/|\/\/)/.test(l.trim()));
+  return start >= 0 ? lines.slice(start).join('\n').trim() : text.trim();
+}
+
+// ── Generate one chunk via non-streaming call ─────────────────────────
+async function genChunk(plan, fileInfo, chunkDesc, existingCode) {
+  const res = await fetch(LLM+'/v1/chat/completions', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({
+      model:'qwen2.5-coder',
+      messages:[{role:'system',content:SYS_CHUNK(plan,fileInfo,chunkDesc,existingCode)},{role:'user',content:`Write the section completely, every function fully implemented: ${chunkDesc}`}],
+      stream:false, temperature:0.18, max_tokens:3500
+    })
+  });
+  if (!res.ok) throw new Error('HTTP '+res.status);
+  const data = await res.json();
+  let text = data.choices[0].message.content.trim();
+  // Strip any accidental fences the model adds
+  text = text.replace(/^```[\w]*\n?/,'').replace(/\n?```\s*$/,'').trim();
+  return text;
+}
+
+// ── Build from a stored plan (also called by the "Build" button) ──────
+async function buildFromPlan(plan, userPrompt, ws, execBub) {
+  const allItems = [];
+
+  for (let fi = 0; fi < plan.files.length; fi++) {
+    const fileInfo = plan.files[fi];
+    const fileProg = `${fi+1}/${plan.files.length}`;
+    const chunks = fileInfo.chunks || [fileInfo.description || 'complete implementation'];
+
+    const fileBub = addBubble('bot','',false);
+    let fullCode = seedFile(fileInfo, plan) || '';
+
+    for (let ci = 0; ci < chunks.length; ci++) {
+      const chunkDesc = chunks[ci];
+      const chunkProg = `${ci+1}/${chunks.length}`;
+      setStatus('busy', `${fileInfo.path} — section ${chunkProg}`);
+
+      fileBub.innerHTML = `
+        <div style="font-size:10px;color:var(--t2);margin-bottom:5px">
+          📄 <b style="color:var(--text);font-family:monospace">${esc(fileInfo.path)}</b>
+          <span style="color:var(--t2);margin-left:4px">file ${fileProg}</span>
+        </div>
+        <div style="font-size:10px;color:var(--accent);margin-bottom:5px">✍ ${esc(chunkDesc)} <span style="color:var(--t2)">(${chunkProg})</span></div>
+        <div class="typing"><b></b><b></b><b></b></div>`;
+      chatEl.scrollTop = chatEl.scrollHeight;
+
+      try {
+        const chunk = await genChunk(plan, fileInfo, chunkDesc, fullCode);
+        if (chunk) fullCode += (fullCode ? '\n' : '') + chunk;
+      } catch(e) {
+        fileBub.innerHTML += `<div style="font-size:10px;color:var(--red);margin-top:4px">⚠ section failed: ${esc(e.message)}</div>`;
+      }
+    }
+
+    const lines = (fullCode.match(/\n/g)||[]).length + 1;
+    fileBub.innerHTML = `
+      <div style="font-size:10px;color:var(--t2);margin-bottom:4px">
+        📄 <b style="color:var(--text);font-family:monospace">${esc(fileInfo.path)}</b>
+        <span style="color:var(--grn);margin-left:6px">✓ ${lines} lines</span>
+      </div>
+      <div style="font-size:10px;color:var(--t2)">${chunks.length} sections written</div>`;
+    chatEl.scrollTop = chatEl.scrollHeight;
+
+    if (fullCode.trim().length > 10) {
+      allItems.push({type:'file', path:fileInfo.path, content:fullCode.trim(), lang:fileInfo.lang||'text'});
+    }
+  }
+
+  // Add setup commands
+  (plan.setupCommands||[]).forEach(cmd => allItems.push({type:'run', cmd}));
+
+  // Write files + run commands
+  setStatus('busy','Writing to disk…');
+  if (!execBub) { execBub = addBubble('bot','',false); execBub.innerHTML=''; }
+  const header = document.createElement('div');
+  header.style.cssText='font-size:11px;color:var(--t2);margin-bottom:6px';
+  header.textContent=`💾 Writing ${allItems.filter(x=>x.type==='file').length} files to ${ws}…`;
+  execBub.appendChild(header);
+  let {failures, saved} = await executeItems(allItems, execBub, ws);
+
+  // Self-fix loop
+  for (let attempt=1; failures.length && attempt<=MAX_FIX; attempt++) {
+    const rb=document.createElement('div'); rb.className='retry-bar';
+    rb.innerHTML=`⚠ ${failures.length} error${failures.length!==1?'s':''} — auto-fixing (${attempt}/${MAX_FIX})…`;
+    execBub.appendChild(rb); chatEl.scrollTop=chatEl.scrollHeight;
+    const fixMsgs=[{role:'system',content:SYS_AGENT_FALLBACK},{role:'user',content:`Fix these and re-output ONLY corrected files using \`\`\`lang:path format:\n\n${failures.join('\n\n')}`}];
+    const fixBub=addBubble('bot','',true);
+    const fixFull=await streamFull(fixMsgs,fixBub,'');
+    const r=await executeItems(extractFiles(fixFull),fixBub,ws);
+    failures=r.failures; saved.push(...r.saved);
+  }
+
+  // Build summary
+  if (saved.length) {
+    const totalLines=saved.reduce((s,f)=>s+f.lines,0);
+    const totalKB=(saved.reduce((s,f)=>s+f.bytes,0)/1024).toFixed(1);
+    const bs=document.createElement('div'); bs.className='build-summary';
+    bs.innerHTML=`<div class="bs-title"><span>✅ ${esc(plan.appName||'Build')} — ${totalLines.toLocaleString()} lines, ${totalKB}KB</span></div>
+<div class="bs-files">${saved.map(f=>`<span class="bs-file">${esc(f.path)}</span>`).join('')}</div>
+<div class="bs-btns"><button class="bs-btn" onclick="openInExplorer()">📂 Open Folder</button></div>`;
+    execBub.appendChild(bs); chatEl.scrollTop=chatEl.scrollHeight;
+
+    // Store built files in plan for continuity
+    if (currentPlan) {
+      currentPlan._builtFiles = saved.map(f=>f.path);
+      currentPlan._totalLines = totalLines;
+    }
+
+    // Usage guide
+    setStatus('busy','Writing usage guide…');
+    const expMsgs=[{role:'system',content:SYS_EXPLAIN},{role:'user',content:`App: ${plan.appName}\nStack: ${plan.stack}\nStart: ${plan.startCommand||'see README'}\nFeatures: ${(plan.features||[]).join(', ')}\nFiles: ${saved.map(f=>f.path).join(', ')}`}];
+    const expBub=addBubble('bot','',true);
+    await streamFull(expMsgs,expBub,'');
+
+    // Show continue bar
+    const cb=document.createElement('div'); cb.className='continue-bar';
+    cb.innerHTML=`<span>⚡ <b>${esc(plan.appName)}</b> is built and ready. Want to add features, fix something, or modify the app? Just ask.</span>`;
+    expBub.appendChild(cb); chatEl.scrollTop=chatEl.scrollHeight;
+  }
+
+  setStatus('online');
+  await saveHistory();
+}
+
+// Called by "🚀 Build" button on plan card
+async function triggerBuild(planId) {
+  if (busy) return;
+  if (!currentPlan) return;
+  busy=true; sendEl.disabled=true;
+  try {
+    const execBub=addBubble('bot','',false); execBub.innerHTML='';
+    await buildFromPlan(currentPlan, currentPlan._prompt, workspace, execBub);
+  } catch(e) {
+    const eb=addBubble('bot','',false);
+    eb.innerHTML=`<span style="color:#f87171">⚠ Build error: ${esc(e.message)}</span>`;
+    setStatus('err'); setTimeout(()=>setStatus('online'),4000);
+  }
+  busy=false; sendEl.disabled=false; inpEl.focus();
+}
+
+// ── Agent: generate plan then auto-build ──────────────────────────────
+async function agentBuild(userPrompt, ws) {
+  setStatus('busy','Planning…');
+  const planBub=addBubble('bot','',false);
+  planBub.innerHTML='<div style="font-size:11px;color:var(--t2)">📋 Creating build plan…</div><div class="typing" style="margin-top:6px"><b></b><b></b><b></b></div>';
+
+  let plan;
+  try {
+    plan=await fetchPlan(userPrompt); // returns parsed JSON directly now
+    if (!Array.isArray(plan.files)||!plan.files.length) throw new Error('file list empty');
+  } catch(e) {
+    planBub.innerHTML=`<span style="color:var(--ylw);font-size:11px">⚠ Plan failed (${esc(e.message)}) — switching to direct build…</span>`;
+    return agentSingleShot(userPrompt, ws);
+  }
+
+  plan._prompt=userPrompt;
+  currentPlan=plan;
+
+  // Show plan card with Build button
+  const pid='plan-'+Date.now();
+  planBub.innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span style="font-size:13px;font-weight:700;color:var(--accent)">${esc(plan.appName||'App')}</span>
+      <span style="font-size:10px;color:var(--t2);background:var(--bg3);padding:2px 8px;border-radius:10px;border:1px solid var(--b2)">${esc(plan.stack||'')}</span>
+    </div>
+    <div style="font-size:12px;color:var(--t3);margin-bottom:6px">${esc(plan.description||'')}</div>
+    <div style="font-size:10.5px;color:var(--t2);margin-bottom:5px"><b style="color:var(--text)">Features:</b> ${(plan.features||[]).map(f=>`<span style="color:var(--t3)">${esc(f)}</span>`).join(' · ')}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:8px">${(plan.files||[]).map(f=>`<span style="padding:2px 7px;border-radius:4px;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.15);color:var(--t3);font-size:10px;font-family:monospace">${esc(f.path)}</span>`).join('')}</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:10.5px;color:var(--grn)" id="${pid}-status">🔨 Building ${plan.files.length} files…</span>
+      <button class="bs-btn" id="${pid}-btn" onclick="triggerBuild('${pid}')" style="display:none">🚀 Build</button>
+    </div>`;
+
+  // Auto-build immediately
+  const execBub=addBubble('bot','',false); execBub.innerHTML='';
+  try {
+    await buildFromPlan(plan, userPrompt, ws, execBub);
+  } catch(e) {
+    execBub.innerHTML=`<span style="color:#f87171">⚠ Build error: ${esc(e.message)}</span>`;
+    // Show the Build button as fallback
+    const statusEl=document.getElementById(pid+'-status');
+    const btnEl=document.getElementById(pid+'-btn');
+    if(statusEl) statusEl.textContent='⚠ Build failed — click to retry';
+    if(btnEl){ btnEl.style.display=''; btnEl.textContent='🚀 Retry Build'; }
+    setStatus('err'); setTimeout(()=>setStatus('online'),4000);
+  }
+}
+
+// Fallback: single-shot if plan parse fails
+async function agentSingleShot(userPrompt, ws) {
+  const botBub=addBubble('bot','',true);
+  const full=await streamFull(
+    [{role:'system',content:SYS_AGENT_FALLBACK+(ws?`\n\nWorkspace: ${ws}`:'')},{role:'user',content:userPrompt}],
+    botBub,'');
+  const items=extractFiles(full);
+  if (items.length) {
+    const info=document.createElement('div');
+    info.style.cssText='font-size:11px;color:var(--t2);margin:6px 0 4px';
+    info.textContent=`📦 Writing ${items.filter(x=>x.type==='file').length} files…`;
+    botBub.appendChild(info);
+    const {saved}=await executeItems(items,botBub,ws);
+    if (saved.length) {
+      const bs=document.createElement('div'); bs.className='build-summary';
+      bs.innerHTML=`<div class="bs-title"><span>✅ ${saved.reduce((s,f)=>s+f.lines,0).toLocaleString()} lines written</span></div>
+<div class="bs-files">${saved.map(f=>`<span class="bs-file">${esc(f.path)}</span>`).join('')}</div>
+<div class="bs-btns"><button class="bs-btn" onclick="openInExplorer()">📂 Open Folder</button></div>`;
+      botBub.appendChild(bs); chatEl.scrollTop=chatEl.scrollHeight;
+    }
+  }
+  setStatus('online');
+  await saveHistory();
+}
+
+// ── Image upload ──────────────────────────────────────────────────────
+function attachImage(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    attachedImage = {name:file.name, dataUrl:e.target.result, type:file.type};
+    let prev = document.getElementById('img-preview');
+    if (!prev) {
+      prev = document.createElement('div'); prev.id='img-preview';
+      document.getElementById('bar').insertBefore(prev, document.getElementById('bar').firstChild);
+    }
+    prev.innerHTML = `<img src="${attachedImage.dataUrl}"><span style="flex:1">${esc(file.name)}</span><button onclick="clearImage()" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:16px;line-height:1">×</button>`;
+  };
+  reader.readAsDataURL(file);
+  input.value='';
+}
+function clearImage() { attachedImage=null; document.getElementById('img-preview')?.remove(); }
+
+// ── Main send ─────────────────────────────────────────────────────────
+async function send() {
+  const text=inpEl.value.trim();
+  if ((!text && !attachedImage) || busy) return;
+  busy=true; sendEl.disabled=true;
+  inpEl.value=''; inpEl.style.height='auto';
+
+  // Build user bubble (with optional image)
+  const userRow = document.createElement('div');
+  const last=chatEl.lastElementChild, ng=!last||last.dataset.role!=='user';
+  userRow.className='row user'+(ng?' gap':''); userRow.dataset.role='user';
+  const uav=document.createElement('div'); uav.className='av av-u'; uav.textContent='U';
+  if(!ng) uav.style.visibility='hidden';
+  const ubub=document.createElement('div'); ubub.className='bub user';
+  let displayText = text||'';
+  if (attachedImage) {
+    ubub.innerHTML = `<img src="${attachedImage.dataUrl}" class="img-in-chat"><br>${esc(displayText)}`;
+  } else {
+    ubub.textContent = displayText;
+  }
+  document.getElementById('empty')?.remove();
+  userRow.appendChild(uav); userRow.appendChild(ubub); chatEl.appendChild(userRow);
+  chatEl.scrollTop=chatEl.scrollHeight;
+
+  // Build message content (include image description for AI)
+  let msgText = text || (attachedImage ? 'See attached image.' : '');
+  if (attachedImage) msgText = `[Image attached: ${attachedImage.name}]\n${msgText}`;
+  const imgData = attachedImage ? {...attachedImage} : null;
+  clearImage();
+
+  history.push({role:'user', content:msgText});
+
+  let searchCtx='';
+  if (webOn) {
+    const tb=addBubble('bot','',true);
+    tb.innerHTML='<div class="typing"><b></b><b></b><b></b></div><div style="font-size:11px;color:var(--t2);margin-top:4px">Searching…</div>';
+    try { const r=await webSearch(text); tb.remove(); if(r) searchCtx=r; } catch { tb.remove(); }
+  }
+
+  const ws=workspace;
+  let userContent = searchCtx ? `[Web context:\n${searchCtx}]\n\nRequest: ${msgText}` : msgText;
 
   try {
-    const res = await fetch('/v1/chat/completions', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        model: 'qwen2.5-coder',
-        messages: [{role: 'user', content: text}],
-        stream: true
-      })
-    });
+    if (agentOn) {
+      // Detect if it's a follow-up modification to an existing built app
+      const hasBuiltApp = currentPlan && currentPlan._builtFiles;
+      const isModify = hasBuiltApp && /\b(add|fix|change|update|modify|improve|refactor|make|include|also|remove|replace|rename)\b/i.test(text);
+      const isNewBuild = !hasBuiltApp || /\b(build|create|new|make me|generate|start)\b/i.test(text);
 
-    if (!res.ok) throw new Error(res.statusText);
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    botDiv.className = 'msg bot';
-    botDiv.textContent = '';
-
-    while (true) {
-      const {done, value} = await reader.read();
-      if (done) break;
-      const chunk = decoder.decode(value);
-      const lines = chunk.split('\n').filter(l => l.startsWith('data: ') && l !== 'data: [DONE]');
-      for (const line of lines) {
-        try {
-          const json = JSON.parse(line.slice(6));
-          const content = json.choices?.[0]?.delta?.content || '';
-          botDiv.textContent += content;
-        } catch (_) {}
+      if (isModify && !isNewBuild) {
+        // Continue working on existing app
+        setStatus('busy','Modifying app…');
+        const ctx = `You previously built ${currentPlan.appName} (${currentPlan.stack}) with these files: ${currentPlan._builtFiles.join(', ')}.\nFeatures: ${(currentPlan.features||[]).join(', ')}.\n\nUser wants to: ${text}`;
+        const modBub=addBubble('bot','',true);
+        const modFull=await streamFull([
+          {role:'system',content:SYS_CHAT+`\n\nYou are continuing work on ${currentPlan.appName}. Workspace: ${ws}. When outputting modified files use \`\`\`lang:path format.`},
+          {role:'user',content:ctx}
+        ], modBub,'');
+        history.push({role:'assistant',content:modFull});
+        // Extract and write any modified files
+        const modItems=extractFiles(modFull);
+        if(modItems.filter(x=>x.type==='file').length){
+          const info=document.createElement('div');info.style.cssText='font-size:11px;color:var(--t2);margin:5px 0';
+          info.textContent=`💾 Applying changes…`;modBub.appendChild(info);
+          await executeItems(modItems,modBub,ws);
+        }
+        await saveHistory(); setStatus('online');
+      } else {
+        setStatus('busy','Planning…');
+        await agentBuild(userContent, ws);
       }
-      chat.scrollTop = chat.scrollHeight;
+    } else {
+      setStatus('busy','Thinking…');
+      const botBub=addBubble('bot','',true);
+      const sysMsgs = [{role:'system',content:SYS_CHAT+(imgData?'\n\nUser shared an image. Acknowledge it and help based on their text request.':'')}];
+      const full=await streamFull([...sysMsgs,...history.slice(0,-1),{role:'user',content:userContent}],botBub,'');
+      history.push({role:'assistant',content:full});
+      await saveHistory(); setStatus('online');
     }
-  } catch (e) {
-    botDiv.textContent = 'Error: ' + e.message;
+  } catch(e) {
+    const eb=addBubble('bot','',false);
+    eb.innerHTML=`<span style="color:#f87171">⚠ ${esc(e.message)}</span>`;
+    history.pop(); setStatus('err'); setTimeout(()=>setStatus('online'),4000);
   }
-  dot.style.background = '#00ff88';
+  busy=false; sendEl.disabled=false; inpEl.focus();
 }
 
-function escapeHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+// ── History ───────────────────────────────────────────────────────────
+function genId(){return Date.now().toString(36)+Math.random().toString(36).slice(2,6);}
+async function saveHistory(){
+  if(!history.length)return;
+  if(!currentId)currentId=genId();
+  const name=history[0]?.content?.slice(0,45)||'Chat';
+  try{await post('/history/save',{id:currentId,name,messages:history});loadHistList();}catch(_){}
 }
-
-send.onclick = ask;
-input.onkeydown = e => { if (e.key === 'Enter') ask(); };
+async function loadHistList(){
+  try{
+    const d=await(await fetch(AGENT+'/history/list')).json();
+    const el=document.getElementById('hl');
+    if(!d.list?.length){el.innerHTML='<div style="padding:7px;font-size:11px;color:var(--t2)">No saved chats yet</div>';return;}
+    el.innerHTML=d.list.map(h=>`<div class="hi${h.id===currentId?' active':''}" onclick="loadHist('${h.id}')"><span class="hi-t">${esc(h.name)}</span><button class="hi-d" onclick="delHist(event,'${h.id}')">✕</button></div>`).join('');
+  }catch(_){}
+}
+async function loadHist(id){
+  try{
+    const d=await(await fetch(AGENT+'/history/load/'+id)).json();
+    history.length=0;history.push(...d.messages);currentId=id;
+    chatEl.innerHTML='';
+    for(const m of history)addBubble(m.role==='user'?'user':'bot',m.content,false);
+    loadHistList();chatEl.scrollTop=chatEl.scrollHeight;
+  }catch(e){alert('Load failed: '+e.message);}
+}
+async function delHist(e,id){
+  e.stopPropagation();
+  await fetch(AGENT+'/history/delete/'+id,{method:'DELETE'}).catch(()=>{});
+  if(currentId===id)currentId=null;
+  loadHistList();
+}
+function newChat(){
+  history.length=0;currentId=null;
+  chatEl.innerHTML=`<div id="empty"><div class="ei">⚡</div><h2>VortexDQ AI</h2><p>Local AI by <a href="https://vortexdq.com" target="_blank" style="color:var(--accent);text-decoration:none">vortexdq.com</a><br>Turn on <b>Agent Mode</b> and ask me to build anything.</p><div class="chips"><div class="chip" onclick="suggest(this)">Build a full-stack todo app</div><div class="chip" onclick="suggest(this)">Build an Express REST API</div><div class="chip" onclick="suggest(this)">Create a Python Flask app</div><div class="chip" onclick="suggest(this)">Build a real-time chat app</div><div class="chip" onclick="suggest(this)">Build a dashboard with charts</div></div></div>`;
+  loadHistList();inpEl.focus();
+}
+function suggest(el){inpEl.value=el.textContent;inpEl.dispatchEvent(new Event('input'));send();}
 </script>
 </body>
 </html>
