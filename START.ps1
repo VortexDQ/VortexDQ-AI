@@ -1,6 +1,8 @@
 # VortexDQ AI — Launcher
-# Right-click this file -> "Run with PowerShell"
 # vortexdq.com
+
+$ErrorActionPreference = "Stop"
+try {
 
 Set-Location $PSScriptRoot
 $Host.UI.RawUI.WindowTitle = "VortexDQ AI"
@@ -169,3 +171,12 @@ Read-Host
 Stop-Process -Name "llama-server" -Force -ErrorAction SilentlyContinue
 Stop-Process -Name "node" -Force -ErrorAction SilentlyContinue
 Write-Host "  Stopped. Goodbye!" -ForegroundColor DarkGray
+
+} catch {
+    Write-Host ""
+    Write-Host "  ============================================================" -ForegroundColor Red
+    Write-Host "  ERROR: $_" -ForegroundColor Red
+    Write-Host "  ============================================================" -ForegroundColor Red
+    Write-Host ""
+    Read-Host "  Press Enter to close"
+}
